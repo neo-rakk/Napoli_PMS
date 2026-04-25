@@ -1,0 +1,68 @@
+'use strict';
+const express = require('express');
+const router = express.Router();
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const db = require('../db/database.cjs');
+const { requireAuth, requireRole } = require('../middleware/auth.cjs');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret';
+
+// Liste des agents (public pour le login PIN, filtré pour admin)
+router.get('/', async (req, res) => {
+  try {
+    const agents = await db.all("SELECT id, nom, prenom, role, ('AGT-' || LPAD(id::text, 3, '0')) as code FROM agents WHERE actif = 1");
+    // Ne pas exposer les noms publiquement, juste l'ID et Code si non authentifié ?
+    // Le CDC dit : La liste n'affiche QUE les codes AGT-XXX (PAS de noms)
+    res.json(agents.map(a => ({ id: a.id, code: a.code, role: a.role })));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Login PIN Agent Réception
+router.post('/auth/pin', async (req, res) => {
+  const { agentId, pin } = req.body;
+  if (!agentId || !pin) return res.status(400).json({ error: 'agentId et pin requis' });
+
+  try {
+    const agent = await db.get("SELECT * FROM agents WHERE id = $1 AND actif = 1", [agentId]);
+    if (!agent) return res.status(404).json({ error: 'Agent introuvable' });
+
+    const isMatch = await bcrypt.compare(pin, agent.pin_hash);
+    if (!isMatch) return res.status(401).json({ error: 'PIN incorrect' });
+
+    await db.query("UPDATE agents SET derniere_connexion = NOW() WHERE id = $1", [agent.id]);
+
+    const token = jwt.sign({ id: agent.id, role: agent.role }, JWT_SECRET, { expiresIn: '8h' });
+    res.json({ token, agent: { id: agent.id, nom: agent.nom, prenom: agent.prenom, role: agent.role, doit_changer_pin: agent.doit_changer_pin } });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Login Admin Local
+router.post('/auth/admin', async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) return res.status(400).json({ error: 'Email et mot de passe requis' });
+
+  try {
+    // Par convention, le mot de passe admin est stocké dans pin_hash aussi
+    const agent = await db.get("SELECT * FROM agents WHERE email = $1 AND role = 'admin' AND actif = 1", [email]);
+    if (!agent) return res.status(404).json({ error: 'Admin introuvable' });
+
+    const isMatch = await bcrypt.compare(password, agent.pin_hash);
+    if (!isMatch) return res.status(401).json({ error: 'Identifiants incorrects' });
+
+    await db.query("UPDATE agents SET derniere_connexion = NOW() WHERE id = $1", [agent.id]);
+
+    const token = jwt.sign({ id: agent.id, role: agent.role }, JWT_SECRET, { expiresIn: '8h' });
+    res.json({ token, agent: { id: agent.id, nom: agent.nom, prenom: agent.prenom, role: agent.role, email: agent.email } });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Autre routes (Create, Update) à compléter...
+
+module.exports = router;
