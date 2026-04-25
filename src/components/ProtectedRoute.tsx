@@ -2,7 +2,12 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 
-export const ProtectedRoute = ({ children, allowedRoles }) => {
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  allowedRoles?: string[];
+}
+
+export const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
   const { user, token } = useAuthStore();
   
   if (!token || !user) {
@@ -13,5 +18,5 @@ export const ProtectedRoute = ({ children, allowedRoles }) => {
     return <Navigate to="/reception" replace />;
   }
   
-  return children;
+  return <>{children}</>;
 };

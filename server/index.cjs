@@ -50,7 +50,8 @@ app.use('/api/clients', (req, res, next) => {
 
 // Appeler les routes
 app.use('/api/agents', require('./routes/agents.cjs'));
-// app.use('/api/clients',         require('./routes/clients.cjs'));
+app.use('/api/clients', require('./routes/clients.cjs'));
+app.use('/api/stats', require('./routes/stats.cjs'));
 // ... autres routes
 
 // API healthcheck pour valider le serveur

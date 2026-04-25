@@ -6,7 +6,11 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import ReceptionLogin from './pages/ReceptionLogin';
 import AdminLogin from './pages/AdminLogin';
+import PublicInscription from './pages/PublicInscription';
 import { ProtectedRoute } from './components/ProtectedRoute';
+
+import ReceptionLayout from './layouts/ReceptionLayout';
+import PreInscriptionsList from './pages/reception/PreInscriptionsList';
 
 // Composant placeholder pour les dashboards
 const DashboardPlaceholder = ({ title }) => (
@@ -20,7 +24,7 @@ export default function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Navigate to="/reception/login" replace />} />
+        <Route path="/" element={<PublicInscription />} />
         
         {/* Auth routes */}
         <Route path="/reception/login" element={<ReceptionLogin />} />
@@ -29,9 +33,19 @@ export default function App() {
         {/* Reception layout */}
         <Route path="/reception" element={
           <ProtectedRoute>
-            <DashboardPlaceholder title="Dashboard Réception" />
+            <ReceptionLayout />
           </ProtectedRoute>
-        } />
+        }>
+          <Route index element={<Navigate to="accueil/attente" replace />} />
+          <Route path="accueil/attente" element={<PreInscriptionsList />} />
+          <Route path="accueil/checkin" element={<DashboardPlaceholder title="Check-In" />} />
+          <Route path="accueil/checkout" element={<DashboardPlaceholder title="Check-Out" />} />
+          <Route path="groupes" element={<DashboardPlaceholder title="Groupes" />} />
+          <Route path="reservations" element={<DashboardPlaceholder title="Réservations" />} />
+          <Route path="planning" element={<DashboardPlaceholder title="Planning" />} />
+          <Route path="chambres" element={<DashboardPlaceholder title="Chambres" />} />
+          <Route path="caisse" element={<DashboardPlaceholder title="Caisse" />} />
+        </Route>
         
         {/* Admin layout */}
         <Route path="/admin" element={

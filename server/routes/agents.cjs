@@ -63,6 +63,24 @@ router.post('/auth/admin', async (req, res) => {
   }
 });
 
+// Login Admin Supabase
+router.post('/auth/supabase-admin', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email requis' });
+
+  try {
+    const agent = await db.get("SELECT * FROM agents WHERE email = $1 AND role = 'admin' AND actif = 1", [email]);
+    if (!agent) return res.status(404).json({ error: 'Admin introuvable en base de données' });
+
+    await db.query("UPDATE agents SET derniere_connexion = NOW() WHERE id = $1", [agent.id]);
+
+    const token = jwt.sign({ id: agent.id, role: agent.role }, JWT_SECRET, { expiresIn: '8h' });
+    res.json({ token, agent: { id: agent.id, nom: agent.nom, prenom: agent.prenom, role: agent.role, email: agent.email } });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Autre routes (Create, Update) à compléter...
 
 module.exports = router;

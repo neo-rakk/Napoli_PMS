@@ -1,4 +1,5 @@
 'use strict';
+require('dotenv').config({ override: true });
 const { Pool } = require('pg');
 
 const connectionString = process.env.POSTGRES_URL_NON_POOLING || process.env.DATABASE_URL;
