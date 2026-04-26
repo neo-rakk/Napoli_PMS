@@ -26,11 +26,14 @@ import ClientsListAdmin from './pages/admin/ClientsList';
 import AdminHebergement from './pages/admin/AdminHebergement';
 import AdminFacturation from './pages/admin/AdminFacturation';
 import AuditLogs from './pages/admin/AuditLogs';
+import MaintenanceReception from './pages/reception/MaintenanceReception';
 
 import HousekeepingLayout from './layouts/HousekeepingLayout';
 import HousekeepingDashboard from './pages/housekeeping/HousekeepingDashboard';
 import SecurityLayout from './layouts/SecurityLayout';
 import SecurityDashboard from './pages/security/SecurityDashboard';
+import MaintenanceLayout from './layouts/MaintenanceLayout';
+import MaintenanceDashboard from './pages/maintenance/MaintenanceDashboard';
 
 // Composant placeholder pour les dashboards
 const DashboardPlaceholder = ({ title }) => (
@@ -66,6 +69,7 @@ export default function App() {
           <Route path="chambres" element={<ChambresPlan />} />
           <Route path="caisse" element={<CaisseJournaliere />} />
           <Route path="cloture" element={<MainCourante />} />
+          <Route path="maintenance" element={<MaintenanceReception />} />
         </Route>
         
         {/* Admin layout */}
@@ -89,6 +93,15 @@ export default function App() {
           </ProtectedRoute>
         }>
           <Route index element={<HousekeepingDashboard />} />
+        </Route>
+
+        {/* Maintenance layout */}
+        <Route path="/maintenance" element={
+          <ProtectedRoute allowedRoles={['maintenance', 'admin']}>
+            <MaintenanceLayout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<MaintenanceDashboard />} />
         </Route>
 
         {/* Security layout */}

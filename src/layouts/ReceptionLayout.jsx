@@ -55,6 +55,7 @@ export default function ReceptionLayout() {
     { label: 'Plan Chambres', path: '/reception/chambres' },
     { label: 'Caisse', path: '/reception/caisse' },
     { label: 'Main Courante', path: '/reception/cloture' },
+    { label: 'Maintenance', path: '/reception/maintenance' },
     // Only show HK / Maint if allowed
   ];
 
