@@ -72,11 +72,11 @@ export default function AdminStock() {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-            <PackageSearch className="w-6 h-6 text-indigo-600" /> Économat & Stocks
+            <PackageSearch className="w-6 h-6 text-emerald-600" /> Économat & Stocks
           </h1>
           <p className="text-slate-500">Gérez l'inventaire des produits (Housekeeping, Maintenance, POS).</p>
         </div>
-        <Button onClick={() => setShowCreate(true)} className="bg-indigo-600 hover:bg-indigo-700">
+        <Button onClick={() => setShowCreate(true)} className="bg-emerald-600 hover:bg-emerald-700">
            <PlusCircle className="w-4 h-4 mr-2" /> Nouvel Article
         </Button>
       </div>

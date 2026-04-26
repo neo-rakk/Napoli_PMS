@@ -137,7 +137,7 @@ export default function CheckOut() {
                  <p>Le solde doit être de 0 pour effectuer le Check-Out.</p>
                  <div className="flex gap-2 mt-4 inline-block w-full">
                    <Button className="flex-1 bg-amber-600 hover:bg-amber-700" onClick={() => handlePayment('cash')} disabled={actionLoading}>Cash</Button>
-                   <Button className="flex-1 bg-blue-600 hover:bg-blue-700" onClick={() => handlePayment('tpe')} disabled={actionLoading}>TPE</Button>
+                   <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700" onClick={() => handlePayment('tpe')} disabled={actionLoading}>TPE</Button>
                  </div>
               </div>
             ) : (

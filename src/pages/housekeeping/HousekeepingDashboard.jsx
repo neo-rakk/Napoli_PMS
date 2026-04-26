@@ -59,20 +59,20 @@ export default function HousekeepingDashboard() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {chambres.map(c => (
-            <div key={c.id} className={`bg-white rounded-xl border-l-4 p-5 shadow-sm flex flex-col ${c.statut === 'sale' ? 'border-l-purple-500' : 'border-l-blue-500'}`}>
+            <div key={c.id} className={`bg-white rounded-xl border-l-4 p-5 shadow-sm flex flex-col ${c.statut === 'sale' ? 'border-l-purple-500' : 'border-l-emerald-500'}`}>
                <div className="flex justify-between items-start mb-4">
                  <div>
                    <div className="text-3xl font-black font-mono tracking-tighter text-slate-800">{c.numero}</div>
                    <div className="text-sm text-slate-500 font-bold uppercase">{c.bloc_nom} ({c.type})</div>
                  </div>
-                 <div className={`px-2 py-1 text-xs font-bold uppercase rounded ${c.statut === 'sale' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                 <div className={`px-2 py-1 text-xs font-bold uppercase rounded ${c.statut === 'sale' ? 'bg-purple-100 text-purple-700' : 'bg-emerald-100 text-emerald-700'}`}>
                    {c.statut.replace('_', ' ')}
                  </div>
                </div>
                
                <div className="mt-auto pt-4 border-t border-slate-100 flex justify-end">
                  {c.statut === 'sale' && (
-                   <Button onClick={() => handleStatusChange(c.id, 'en_nettoyage')} className="w-full bg-blue-600 hover:bg-blue-700">Commencer Nettoyage</Button>
+                   <Button onClick={() => handleStatusChange(c.id, 'en_nettoyage')} className="w-full bg-emerald-600 hover:bg-emerald-700">Commencer Nettoyage</Button>
                  )}
                  {c.statut === 'en_nettoyage' && (
                    <Button onClick={() => handleStatusChange(c.id, 'libre')} className="w-full bg-emerald-600 hover:bg-emerald-700">Terminer (Propre)</Button>

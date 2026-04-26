@@ -42,9 +42,9 @@ export default function CaisseJournaliere() {
              <div className="text-emerald-700 font-semibold mb-1 uppercase text-sm tracking-wider">Espèces (Cash)</div>
              <div className="text-3xl font-black text-emerald-900">{stats.cash.toLocaleString()} DZD</div>
           </div>
-          <div className="bg-blue-50 border border-blue-100 rounded-xl shadow-sm p-6 text-center">
-             <div className="text-blue-700 font-semibold mb-1 uppercase text-sm tracking-wider">Carte (TPE)</div>
-             <div className="text-3xl font-black text-blue-900">{stats.tpe.toLocaleString()} DZD</div>
+          <div className="bg-emerald-50 border border-emerald-100 rounded-xl shadow-sm p-6 text-center">
+             <div className="text-emerald-700 font-semibold mb-1 uppercase text-sm tracking-wider">Carte (TPE)</div>
+             <div className="text-3xl font-black text-emerald-900">{stats.tpe.toLocaleString()} DZD</div>
           </div>
        </div>
 
@@ -70,7 +70,7 @@ export default function CaisseJournaliere() {
                     <td className="px-6 py-4">{e.client_nom} {e.client_prenom}</td>
                     <td className="px-6 py-4">{e.agent_prenom} {e.agent_nom}</td>
                     <td className="px-6 py-4">
-                       <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${e.methode === 'cash' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'}`}>
+                       <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${e.methode === 'cash' ? 'bg-emerald-100 text-emerald-800' : 'bg-emerald-100 text-emerald-800'}`}>
                          {e.methode}
                        </span>
                     </td>

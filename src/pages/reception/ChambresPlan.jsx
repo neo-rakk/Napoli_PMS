@@ -36,7 +36,7 @@ export default function ChambresPlan() {
       case 'occupee': return 'bg-red-100 border-red-300 text-red-800';
       case 'partielle': return 'bg-amber-100 border-amber-300 text-amber-800';
       case 'sale': return 'bg-purple-100 border-purple-300 text-purple-800';
-      case 'en_nettoyage': return 'bg-blue-100 border-blue-300 text-blue-800';
+      case 'en_nettoyage': return 'bg-emerald-100 border-emerald-300 text-emerald-800';
       case 'travaux': return 'bg-slate-200 border-slate-400 text-slate-800';
       default: return 'bg-gray-100 border-gray-300 text-gray-800';
     }

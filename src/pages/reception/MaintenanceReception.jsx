@@ -160,7 +160,7 @@ export default function MaintenanceReception() {
                  <td className="px-6 py-4">
                     <span className={`px-2 py-1 text-xs font-bold uppercase rounded ${
                        t.statut === 'signale' ? 'bg-amber-100 text-amber-800' :
-                       t.statut === 'en_cours' ? 'bg-blue-100 text-blue-800' :
+                       t.statut === 'en_cours' ? 'bg-emerald-100 text-emerald-800' :
                        t.statut === 'resolu' ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-800'
                     }`}>
                       {t.statut.replace('_', ' ')}

@@ -35,7 +35,7 @@ export default function AdminReports() {
     <div className="p-8 max-w-7xl mx-auto space-y-8">
       <div>
         <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-          <TrendingUp className="w-6 h-6 text-indigo-600" /> Rapports & Analytics
+          <TrendingUp className="w-6 h-6 text-emerald-600" /> Rapports & Analytics
         </h1>
         <p className="text-slate-500">Statistiques financières et d'occupation du complexe.</p>
       </div>
@@ -43,7 +43,7 @@ export default function AdminReports() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
            <div className="flex items-center gap-4">
-              <div className="p-3 bg-indigo-100 text-indigo-600 rounded-xl"><Calculator className="w-6 h-6" /></div>
+              <div className="p-3 bg-emerald-100 text-emerald-600 rounded-xl"><Calculator className="w-6 h-6" /></div>
               <div>
                  <p className="text-sm font-medium text-slate-500">Caisse du Jour</p>
                  <h3 className="text-2xl font-black text-slate-800">{summary?.caisse_du_jour?.toLocaleString() || 0} DZD</h3>
@@ -63,7 +63,7 @@ export default function AdminReports() {
         </div>
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
            <div className="flex items-center gap-4">
-              <div className="p-3 bg-blue-100 text-blue-600 rounded-xl"><Users className="w-6 h-6" /></div>
+              <div className="p-3 bg-emerald-100 text-emerald-600 rounded-xl"><Users className="w-6 h-6" /></div>
               <div>
                  <p className="text-sm font-medium text-slate-500">In-House</p>
                  <h3 className="text-2xl font-black text-slate-800">{summary?.clients_inhouse || 0} Pax</h3>

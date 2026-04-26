@@ -106,12 +106,12 @@ export default function AdminFacturation() {
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-              <Building2 className="w-6 h-6 text-indigo-600" /> Grands Comptes
+              <Building2 className="w-6 h-6 text-emerald-600" /> Grands Comptes
             </h1>
             <p className="text-slate-500 text-sm mt-1">Gestion B2B et Facturation Centrale.</p>
           </div>
           {!selectedCompte && (
-            <Button onClick={() => setShowCompteModal(true)} className="bg-indigo-600 hover:bg-indigo-700">
+            <Button onClick={() => setShowCompteModal(true)} className="bg-emerald-600 hover:bg-emerald-700">
                <PlusCircle className="w-4 h-4 mr-2" /> Nouveau Compte
             </Button>
           )}
@@ -125,14 +125,14 @@ export default function AdminFacturation() {
             {comptes.map(c => (
               <div 
                 key={c.id} 
-                className={`p-4 cursor-pointer hover:bg-slate-50 transition-colors flex items-center justify-between ${selectedCompte?.id === c.id ? 'bg-indigo-50 border-l-4 border-indigo-600' : ''}`}
+                className={`p-4 cursor-pointer hover:bg-slate-50 transition-colors flex items-center justify-between ${selectedCompte?.id === c.id ? 'bg-emerald-50 border-l-4 border-emerald-600' : ''}`}
                 onClick={() => handleSelectCompte(c)}
               >
                 <div>
                    <div className="font-bold text-slate-800">{c.nom}</div>
                    <div className="text-xs text-slate-500 mt-1">NIF: {c.nif || 'N/A'}</div>
                 </div>
-                <ChevronRight className={`w-5 h-5 ${selectedCompte?.id === c.id ? 'text-indigo-600' : 'text-slate-300'}`} />
+                <ChevronRight className={`w-5 h-5 ${selectedCompte?.id === c.id ? 'text-emerald-600' : 'text-slate-300'}`} />
               </div>
             ))}
           </div>
@@ -171,15 +171,15 @@ export default function AdminFacturation() {
              {activeTab === 'contrats' && (
                <div>
                   <div className="flex justify-between items-center mb-6">
-                     <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2"><FileSignature className="w-5 h-5 text-indigo-500" /> Accords & Contrats</h3>
+                     <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2"><FileSignature className="w-5 h-5 text-emerald-500" /> Accords & Contrats</h3>
                      <Button size="sm" onClick={() => setShowContratModal(true)}>Ajouter un Contrat</Button>
                   </div>
                   {contrats.length === 0 ? <p className="text-slate-500 text-center py-8">Aucun contrat défini pour ce compte.</p> : (
                     <div className="grid gap-4 sm:grid-cols-2">
                        {contrats.map(ct => (
-                          <div key={ct.id} className="border border-slate-200 p-4 rounded-xl shadow-sm hover:border-indigo-300">
+                          <div key={ct.id} className="border border-slate-200 p-4 rounded-xl shadow-sm hover:border-emerald-300">
                              <div className="flex justify-between items-start mb-2">
-                               <div className="font-bold text-indigo-900">{ct.reference}</div>
+                               <div className="font-bold text-emerald-900">{ct.reference}</div>
                                <span className={`px-2 py-0.5 text-xs font-bold rounded-full uppercase ${ct.actif ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-800'}`}>
                                  {ct.actif ? 'Actif' : 'Inactif'}
                                </span>
@@ -196,7 +196,7 @@ export default function AdminFacturation() {
              {activeTab === 'bdc' && (
                <div>
                   <div className="flex justify-between items-center mb-6">
-                     <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2"><FileText className="w-5 h-5 text-blue-500" /> Bons de Commande</h3>
+                     <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2"><FileText className="w-5 h-5 text-emerald-500" /> Bons de Commande</h3>
                      <Button size="sm" onClick={() => setShowBdcModal(true)}>Nouveau BDC</Button>
                   </div>
                   {bdc.length === 0 ? <p className="text-slate-500 text-center py-8">Aucun BDC enregistré.</p> : (

@@ -50,11 +50,11 @@ export default function GroupesList() {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-            <Users className="w-6 h-6 text-indigo-600" /> Gestion des Délégations / Groupes
+            <Users className="w-6 h-6 text-emerald-600" /> Gestion des Délégations / Groupes
           </h1>
           <p className="text-slate-500">Planifiez et gérez les délégations attendues au village.</p>
         </div>
-        <Button onClick={() => setShowModal(true)} className="bg-indigo-600 hover:bg-indigo-700">
+        <Button onClick={() => setShowModal(true)} className="bg-emerald-600 hover:bg-emerald-700">
           <PlusCircle className="w-4 h-4 mr-2" /> Nouvelle Délégation
         </Button>
       </div>
@@ -66,7 +66,7 @@ export default function GroupesList() {
           <div key={g.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow">
             <div className="flex justify-between items-start mb-4">
                <div>
-                  <div className="text-xs font-bold text-indigo-600 mb-1">{g.code}</div>
+                  <div className="text-xs font-bold text-emerald-600 mb-1">{g.code}</div>
                   <h3 className="text-xl font-bold text-slate-800 leading-tight">{g.nom}</h3>
                </div>
                <span className={`px-2 py-1 text-xs font-bold uppercase rounded-full ${g.statut === 'en_attente' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}`}>
@@ -165,7 +165,7 @@ export default function GroupesList() {
 
               <div className="flex justify-end gap-3 mt-8">
                 <Button variant="outline" type="button" onClick={() => setShowModal(false)}>Annuler</Button>
-                <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700">Enregistrer</Button>
+                <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700">Enregistrer</Button>
               </div>
             </form>
           </div>

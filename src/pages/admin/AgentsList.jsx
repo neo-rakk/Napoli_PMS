@@ -117,7 +117,7 @@ export default function AgentsList() {
                  <td className="px-6 py-4 font-bold text-slate-800">{a.nom} {a.prenom}</td>
                  <td className="px-6 py-4 font-mono">{a.matricule}</td>
                  <td className="px-6 py-4">
-                    <span className="px-2 py-1 bg-indigo-100 text-indigo-800 rounded font-bold uppercase text-xs">
+                    <span className="px-2 py-1 bg-emerald-100 text-emerald-800 rounded font-bold uppercase text-xs">
                       {a.role?.replace('_', ' ')}
                     </span>
                  </td>

@@ -30,7 +30,7 @@ export default function AdminLayout() {
       <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col h-screen sticky top-0">
         <div className="p-6">
           <h1 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-            <span className="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center text-sm">VO</span>
+            <span className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-sm">VO</span>
             Admin Center
           </h1>
           <p className="text-slate-500 text-xs mt-1">Village Olympique</p>
@@ -44,7 +44,7 @@ export default function AdminLayout() {
               end={item.exact}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  isActive ? 'bg-indigo-600 text-white' : 'hover:bg-slate-800 hover:text-white'
+                  isActive ? 'bg-emerald-600 text-white' : 'hover:bg-slate-800 hover:text-white'
                 }`
               }
             >

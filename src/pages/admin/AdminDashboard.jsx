@@ -25,7 +25,7 @@ export default function AdminDashboard() {
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
           <div className="text-sm font-semibold text-slate-500 mb-1 uppercase tracking-wider">Chambres Occupées</div>
           <div className="text-3xl font-black text-slate-800">{stats.chambres_occupees} <span className="text-lg font-medium text-slate-500">/ {stats.total_chambres}</span></div>
-          <div className="mt-2 text-xs text-indigo-600 font-bold bg-indigo-50 inline-block px-2 py-1 rounded">
+          <div className="mt-2 text-xs text-emerald-600 font-bold bg-emerald-50 inline-block px-2 py-1 rounded">
              {Math.round((stats.chambres_occupees / Math.max(1, stats.total_chambres)) * 100)}% Occupation
           </div>
         </div>

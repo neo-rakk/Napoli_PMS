@@ -63,7 +63,7 @@ export default function AdminTarifs() {
     <div className="p-8 max-w-7xl mx-auto space-y-8">
       <div>
         <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-          <BadgeDollarSign className="w-6 h-6 text-indigo-600" /> Tarification & Yield
+          <BadgeDollarSign className="w-6 h-6 text-emerald-600" /> Tarification & Yield
         </h1>
         <p className="text-slate-500">Gérez vos prix de base et vos saisons (basse, haute, très haute).</p>
       </div>
@@ -105,11 +105,11 @@ export default function AdminTarifs() {
 
         {/* Saisons et Multiplicateurs */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-           <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-indigo-50">
-              <h2 className="text-lg font-bold text-indigo-900 flex items-center gap-2">
-                 <CalendarRange className="w-5 h-5 text-indigo-600" /> Saisons & Périodes Spéciales
+           <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-emerald-50">
+              <h2 className="text-lg font-bold text-emerald-900 flex items-center gap-2">
+                 <CalendarRange className="w-5 h-5 text-emerald-600" /> Saisons & Périodes Spéciales
               </h2>
-              <Button size="sm" onClick={() => setShowSaison(true)} className="bg-indigo-600 hover:bg-indigo-700">Ajouter</Button>
+              <Button size="sm" onClick={() => setShowSaison(true)} className="bg-emerald-600 hover:bg-emerald-700">Ajouter</Button>
            </div>
            <div className="p-6 overflow-y-auto max-h-[500px]">
               {loading && <p className="text-center text-slate-500">Chargement...</p>}
@@ -117,7 +117,7 @@ export default function AdminTarifs() {
               
               <div className="space-y-4">
                  {data.saisons?.map(s => (
-                    <div key={s.id} className="border border-slate-200 rounded-xl p-4 flex justify-between items-center hover:border-indigo-300 transition-colors">
+                    <div key={s.id} className="border border-slate-200 rounded-xl p-4 flex justify-between items-center hover:border-emerald-300 transition-colors">
                        <div>
                           <div className="font-bold text-slate-800 text-base">{s.nom}</div>
                           <div className="text-sm text-slate-500 mt-1">
@@ -199,7 +199,7 @@ export default function AdminTarifs() {
                  </div>
                  <div className="pt-4 flex justify-end gap-3 mt-4">
                    <Button variant="outline" type="button" onClick={() => setShowSaison(false)}>Annuler</Button>
-                   <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700">Enregistrer</Button>
+                   <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700">Enregistrer</Button>
                  </div>
               </form>
            </div>

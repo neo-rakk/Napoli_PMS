@@ -111,7 +111,7 @@ export default function POSDashboard() {
               onClick={() => setActiveCategory(cat)}
               className={`px-4 py-2 rounded-full font-bold text-sm whitespace-nowrap transition-colors ${
                 activeCategory === cat 
-                  ? 'bg-sky-600 text-white shadow-md' 
+                  ? 'bg-emerald-600 text-white shadow-md' 
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
@@ -127,10 +127,10 @@ export default function POSDashboard() {
               <div 
                 key={p.id} 
                 onClick={() => addToCart(p)}
-                className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 cursor-pointer hover:border-sky-500 hover:shadow-md transition-all flex flex-col items-center text-center select-none active:scale-95"
+                className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 cursor-pointer hover:border-emerald-500 hover:shadow-md transition-all flex flex-col items-center text-center select-none active:scale-95"
               >
-                <div className="w-16 h-16 bg-sky-50 rounded-full flex items-center justify-center mb-3">
-                   <Coffee className="w-8 h-8 text-sky-500" />
+                <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mb-3">
+                   <Coffee className="w-8 h-8 text-emerald-500" />
                 </div>
                 <h3 className="font-bold text-slate-800 leading-tight mb-2 h-10 flex items-center justify-center">{p.nom}</h3>
                 <div className="text-lg font-black text-emerald-600 mt-auto">{p.prix} DZD</div>
@@ -142,12 +142,12 @@ export default function POSDashboard() {
 
       {/* Right side: Cart / Invoice */}
       <div className="w-[400px] bg-white shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.05)] border-l border-slate-200 flex flex-col z-20">
-        <div className="p-4 bg-sky-50 border-b border-sky-100 flex items-center justify-between">
-          <h2 className="font-bold text-sky-900 flex items-center gap-2">
+        <div className="p-4 bg-emerald-50 border-b border-emerald-100 flex items-center justify-between">
+          <h2 className="font-bold text-emerald-900 flex items-center gap-2">
             <ShoppingCart className="w-5 h-5" /> 
             Commande en cours
           </h2>
-          <span className="bg-sky-200 text-sky-800 px-2 py-1 rounded text-xs font-bold">{cart.length} art.</span>
+          <span className="bg-emerald-200 text-emerald-800 px-2 py-1 rounded text-xs font-bold">{cart.length} art.</span>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50">
@@ -161,7 +161,7 @@ export default function POSDashboard() {
               <div key={item.product_id} className="bg-white p-3 rounded-lg border border-slate-200 flex items-center shadow-sm">
                 <div className="flex-1">
                   <div className="font-bold text-sm text-slate-800">{item.nom}</div>
-                  <div className="text-xs text-sky-600 font-bold">{item.prix} DZD / u</div>
+                  <div className="text-xs text-emerald-600 font-bold">{item.prix} DZD / u</div>
                 </div>
                 <div className="flex items-center gap-2">
                    <button onClick={() => updateQuantity(item.product_id, -1)} className="w-8 h-8 bg-slate-100 hover:bg-slate-200 rounded font-bold text-slate-600">-</button>
@@ -208,8 +208,8 @@ export default function POSDashboard() {
                     <div className="text-left"><div className="font-bold text-lg text-slate-800">Espèces (Cash)</div><div className="text-sm text-slate-500">Paiement au comptoir</div></div>
                  </button>
                  
-                 <button onClick={() => handleCheckout('tpe')} className="w-full p-4 border-2 border-slate-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 flex items-center gap-4 group transition-all">
-                    <div className="bg-blue-100 p-3 rounded-full group-hover:bg-blue-200"><CreditCard className="w-6 h-6 text-blue-700" /></div>
+                 <button onClick={() => handleCheckout('tpe')} className="w-full p-4 border-2 border-slate-200 rounded-xl hover:border-emerald-500 hover:bg-emerald-50 flex items-center gap-4 group transition-all">
+                    <div className="bg-emerald-100 p-3 rounded-full group-hover:bg-emerald-200"><CreditCard className="w-6 h-6 text-emerald-700" /></div>
                     <div className="text-left"><div className="font-bold text-lg text-slate-800">Carte Bancaire / TPE</div><div className="text-sm text-slate-500">Paiement par terminal CIB</div></div>
                  </button>
 

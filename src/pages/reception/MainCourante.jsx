@@ -46,7 +46,7 @@ export default function MainCourante() {
              </div>
              <div>
                 <div className="text-slate-500 text-sm mb-1">TPE / Virement</div>
-                <div className="text-2xl font-black text-blue-700">{data.revenue_tpe.toLocaleString()} DZD</div>
+                <div className="text-2xl font-black text-emerald-700">{data.revenue_tpe.toLocaleString()} DZD</div>
              </div>
              <div>
                 <div className="text-slate-500 text-sm mb-1">Recette Totale</div>
@@ -81,7 +81,7 @@ export default function MainCourante() {
            <h2 className="text-lg font-bold uppercase tracking-wider text-slate-700 mb-2">Occupation (Situation des Chambres)</h2>
            <div className="flex bg-slate-100 rounded-full h-8 overflow-hidden mt-4">
               <div 
-                className="bg-indigo-600 flex items-center justify-center text-xs text-white font-bold" 
+                className="bg-emerald-600 flex items-center justify-center text-xs text-white font-bold" 
                 style={{width: `${(data.chambres_occupees / Math.max(1, data.total_chambres)) * 100}%`}}>
                 {Math.round((data.chambres_occupees / Math.max(1, data.total_chambres)) * 100)}%
               </div>
