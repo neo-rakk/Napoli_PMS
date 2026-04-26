@@ -1,6 +1,6 @@
 # 🏨 Système de Gestion Hôtelière & Village (PMS)
 
-Une application Full-Stack complète (Property Management System) conçue pour la gestion centralisée d'un complexe hôtelier ou d'un village d'hébergement (type Village Olympique). Elle couvre tous les aspects opérationnels : de l'accueil à la facturation B2B, en passant par la maintenance technique, la gouvernance et les points de vente (POS).
+Une application Full-Stack complète (Property Management System) conçue pour la gestion centralisée d'un complexe hôtelier ou d'un village d'hébergement (type Village Olympique). Elle couvre tous les aspects opérationnels : de l'accueil à la facturation B2B, l'économat, le yield management, en passant par la maintenance technique, la gouvernance et les points de vente (POS).
 
 ## ✨ Fonctionnalités Principales
 
@@ -29,11 +29,14 @@ Le système est divisé en plusieurs modules métier, protégés par un système
 * **Room Charge** : Possibilité d'imputer (transférer) le ticket de caisse directement sur la note de chambre d'un client "In-House" pour un paiement global au Check-Out.
 * **Modes de Paiement** : Cash, Carte Bancaire (TPE), Imputation Chambre.
 
-### 5. 🏢 Administration & Back-Office
-* **Facturation & B2B (Grands Comptes)** : Gestion des entreprises partenaires, contrats avec système de remises, et Bons de Commande (BDC) avec montants plafonds.
-* **Gestion du Parc Hébergement** : Création des chambres, blocs/bâtiments, capacités et types.
-* **Gestion des Agents & Accès** : Création des comptes employés avec attribution précise des rôles (Admin, Reception, Housekeeping, Maintenance, POS, Sécurité).
-* **Logs d'Audit** : Traçabilité totale des actions critiques des agents (Qui a fait quoi et quand).
+### 5. 🏢 Administration, Finance & Back-Office
+* **Tarifs & Yield Management** : Gestion des grilles tarifaires de base par type de chambre et formule (LPD, DP, PC, All-Incl). Paramétrage des saisons (haute/basse) avec des multiplicateurs appliqués dynamiquement.
+* **Facturation & B2B (Grands Comptes)** : Gestion des entreprises partenaires, contrats avec système de remises, et paramétrage des Bons de Commande (BDC) avec montants plafonds et taux d'utilisation.
+* **Économat & Stocks** : Suivi global des produits (Économat général, nettoyage, maintenance, F&B) avec catégorisation des seuils d'alerte. Mouvements d'entrée/sortie avec motifs.
+* **Rapports & Analytics** : Visionnage des performances hôtelières via des indicateurs clés et graphiques, y compris les revenus par mode de paiement, l'occupation et les transactions du jour.
+* **Gestion du Parc Hébergement** : Création et gestion fine de la structure physique: blocs, étages, chambres (capacités et types).
+* **Gestion des Agents & Accès (RBAC)** : Création de comptes sécurisés, assignés des permissions métier très précises (Admin, Reception, Housekeeping, Maintenance, POS, Sécurité).
+* **Logs d'Audit** : Traçabilité totale des événements du système, recensant qui a effectué quelle action à quel moment précis.
 
 ---
 
