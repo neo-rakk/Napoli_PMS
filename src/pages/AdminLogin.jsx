@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { Button } from '../components/ui/Button';
+import { ShieldCheck, AlertCircle, ArrowLeft } from 'lucide-react';
 
 export default function AdminLogin() {
   const [email, setEmail] = useState('');
@@ -41,18 +42,24 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8">
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+      <div className="bg-white p-10 rounded-[2.5rem] shadow-2xl max-w-md w-full border border-white/20">
+        
+        <div className="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner border border-emerald-100">
+          <ShieldCheck size={40} />
+        </div>
+
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-black uppercase tracking-tight text-emerald-800">
-            Administration
+          <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tighter leading-none mb-2">
+            Portail Admin
           </h1>
-          <p className="text-slate-500 mt-2">Accès sécurisé</p>
+          <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">Accès Sécurisé</p>
         </div>
 
         {error && (
-          <div className="bg-red-50 text-red-600 p-3 rounded-md mb-6 text-sm text-center">
-            {error}
+          <div className="mb-8 p-4 bg-red-50 border-2 border-red-100 text-red-600 rounded-2xl text-xs flex items-start gap-3">
+            <AlertCircle size={16} className="shrink-0 mt-0.5" />
+            <span className="font-bold">{error}</span>
           </div>
         )}
 
@@ -67,7 +74,7 @@ export default function AdminLogin() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={loading}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-lg focus:ring-emerald-500 focus:border-emerald-500"
+              className="w-full h-12 px-4 border-2 border-slate-100 rounded-2xl focus:border-emerald-500 focus:outline-none font-bold text-slate-800 bg-white transition-all placeholder:font-normal placeholder:text-slate-300"
               placeholder="admin@napoli.com"
             />
           </div>
@@ -82,15 +89,21 @@ export default function AdminLogin() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={loading}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-lg focus:ring-emerald-500 focus:border-emerald-500"
+              className="w-full h-12 px-4 border-2 border-slate-100 rounded-2xl focus:border-emerald-500 focus:outline-none font-black text-slate-800 bg-white transition-all placeholder:font-normal placeholder:text-slate-300 tracking-widest"
               placeholder="••••••••"
             />
           </div>
 
-          <Button type="submit" className="w-full" size="lg" disabled={loading}>
+          <Button type="submit" className="w-full h-14 rounded-2xl font-black uppercase tracking-widest text-sm bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-900/10 transition-all mt-4" disabled={loading}>
             {loading ? 'Connexion...' : 'Se connecter'}
           </Button>
         </form>
+
+        <div className="mt-8 text-center pt-6 border-t border-slate-100">
+          <Link to="/reception/login" className="inline-flex items-center gap-2 text-[10px] font-black text-slate-400 hover:text-emerald-600 uppercase tracking-widest transition-colors">
+            <ArrowLeft size={14} /> Retour à la réception
+          </Link>
+        </div>
       </div>
     </div>
   );

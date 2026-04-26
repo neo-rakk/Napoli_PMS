@@ -11,9 +11,9 @@ export function Button({
   
   const variants = {
     primary: 'bg-emerald-600 text-white hover:bg-emerald-700',
-    secondary: 'bg-slate-200 text-slate-900 hover:bg-slate-300',
+    secondary: 'border border-emerald-600 text-emerald-700 hover:bg-emerald-50 bg-white',
     danger: 'bg-red-600 text-white hover:bg-red-700',
-    ghost: 'bg-transparent text-slate-700 hover:bg-slate-100',
+    ghost: 'hover:bg-emerald-100 text-emerald-700',
   };
   
   const sizes = {

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PinPad } from '../components/PinPad';
 import { useAuthStore } from '../store/authStore';
+import { Lock, User } from 'lucide-react';
 
 export default function ReceptionLogin() {
   const [agents, setAgents] = useState([]);
@@ -13,7 +14,6 @@ export default function ReceptionLogin() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Fetch agents
     fetch('/api/agents')
       .then(res => res.json())
       .then(data => {
@@ -52,7 +52,6 @@ export default function ReceptionLogin() {
         if (data.agent.doit_changer_pin) {
           navigate('/changer-pin');
         } else {
-          // If admin goes here, it still goes to reception mostly
           navigate(data.agent.role === 'admin' ? '/admin' : '/reception');
         }
       } else {
@@ -67,52 +66,71 @@ export default function ReceptionLogin() {
     }
   };
 
+  const selectedAgentData = agents.find(a => a.id.toString() === selectedAgent);
+
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-black uppercase tracking-tight text-emerald-800">
-            Village Olympique Napoli
-          </h1>
-          <p className="text-slate-500 mt-2">Authentification Agent</p>
+    <div className="min-h-screen bg-slate-100 flex flex-col items-center justify-center p-4">
+      <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl overflow-hidden border border-white">
+        
+        <div className="bg-emerald-900 p-10 text-white text-center relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-4 opacity-10">
+            <Lock size={120} />
+          </div>
+          <h1 className="text-3xl font-black uppercase tracking-widest mb-2 relative z-10">Village Napoli</h1>
+          <p className="text-emerald-400 font-bold uppercase tracking-tighter relative z-10">Portail Agents</p>
         </div>
 
-        {error && (
-          <div className="bg-red-50 text-red-600 p-3 rounded-md mb-6 text-sm text-center">
-            {error}
-          </div>
-        )}
+        <div className="p-8">
+          {error && (
+            <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-6 text-sm font-medium border border-red-100">
+              {error}
+            </div>
+          )}
 
-        <div className="mb-8">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Identifiant
-          </label>
-          <div className="relative">
-            <select
-              value={selectedAgent}
-              onChange={(e) => {
-                setSelectedAgent(e.target.value);
-                setPin('');
-                setError('');
-              }}
-              disabled={loading || agents.length === 0}
-              className="w-full border border-gray-300 rounded-md px-4 py-3 appearance-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-lg font-medium"
-            >
-              {agents.map(agent => (
-                <option key={agent.id} value={agent.id}>
-                  {agent.code}
-                </option>
-              ))}
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-              </svg>
+          <div className="mb-8 relative group">
+            <div className="w-full p-5 rounded-2xl border-2 border-slate-50 bg-slate-50/50 hover:border-emerald-500 hover:bg-emerald-50 transition-all text-left flex items-center gap-4 relative overflow-hidden">
+              <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 group-hover:text-emerald-600 group-hover:border-emerald-200 transition-colors shadow-sm shrink-0">
+                <User size={24} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="block font-black text-slate-800 uppercase tracking-widest text-sm truncate">
+                  {selectedAgentData ? selectedAgentData.code : 'Sélectionnez un agent'}
+                </div>
+                <div className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter truncate mt-0.5">
+                  {selectedAgentData ? selectedAgentData.prenom + ' ' + selectedAgentData.nom : ''}
+                </div>
+              </div>
+              <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border border-emerald-100 shrink-0 absolute right-4">
+                <svg className="h-4 w-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+              
+              <select
+                value={selectedAgent}
+                onChange={(e) => {
+                  setSelectedAgent(e.target.value);
+                  setPin('');
+                  setError('');
+                }}
+                disabled={loading || agents.length === 0}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              >
+                {agents.map(agent => (
+                  <option key={agent.id} value={agent.id}>
+                    {agent.code} - {agent.prenom} {agent.nom}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
-        </div>
 
-        <PinPad pin={pin} setPin={setPin} onComplete={handlePinComplete} disabled={loading || agents.length === 0} />
+          <PinPad pin={pin} setPin={setPin} onComplete={handlePinComplete} disabled={loading || agents.length === 0} />
+        </div>
+      </div>
+
+      <div className="mt-12 text-center">
+        <span className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em]">Village Napoli PMS</span>
       </div>
     </div>
   );
