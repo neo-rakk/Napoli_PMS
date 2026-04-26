@@ -34,7 +34,7 @@ router.post('/', async (req, res) => {
       // Optional check if authenticated
       const jwt = require('jsonwebtoken');
       try {
-        const decoded = jwt.verify(req.headers.authorization.split(' ')[1], process.env.JWT_SECRET);
+        const decoded = jwt.verify(req.headers.authorization.split(' ')[1], process.env.JWT_SECRET || process.env.SUPABASE_JWT_SECRET || 'votre-secret-local-dev');
         authAgentId = decoded.id;
       } catch(e) {}
     }

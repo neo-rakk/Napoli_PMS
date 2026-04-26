@@ -6,7 +6,7 @@ const jwt = require('jsonwebtoken');
 const db = require('../db/database.cjs');
 const { requireAuth, requireRole } = require('../middleware/auth.cjs');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret';
+const JWT_SECRET = process.env.JWT_SECRET || process.env.SUPABASE_JWT_SECRET || 'votre-secret-local-dev';
 
 // Liste des agents (public pour le login PIN, filtré pour admin)
 router.get('/', async (req, res) => {

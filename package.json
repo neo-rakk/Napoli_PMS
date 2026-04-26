@@ -5,12 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
-    "build": "vite build",
+    "build": "vite build && node server/scripts/setup.cjs",
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
     "start": "node server.ts",
-    "seed": "node server/scripts/seed.cjs"
+    "seed": "node server/scripts/setup.cjs"
   },
   "dependencies": {
     "@google/genai": "^1.29.0",

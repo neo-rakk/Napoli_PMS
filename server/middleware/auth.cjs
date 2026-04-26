@@ -1,7 +1,7 @@
 'use strict';
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET || process.env.SUPABASE_JWT_SECRET || 'votre-secret-local-dev';
 
 const requireAuth = (req, res, next) => {
   if (!JWT_SECRET) return res.status(500).json({ error: 'JWT_SECRET manquant sur le serveur' });
