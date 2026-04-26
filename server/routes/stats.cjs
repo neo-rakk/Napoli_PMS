@@ -60,12 +60,44 @@ router.get('/summary', requireAuth, async (req, res) => {
     const checkinsToday = await db.get("SELECT COUNT(*) as count FROM reservations WHERE statut = 'checkin' AND DATE(created_at) = CURRENT_DATE");
     const checkoutsToday = await db.get("SELECT COUNT(*) as count FROM reservations WHERE statut = 'checkout' AND DATE(date_depart) = CURRENT_DATE");
 
+    // Recettes du jour (Encaissements + POS)
+    const recettesJour = await db.get("SELECT SUM(montant) as total FROM transactions WHERE DATE(created_at) = CURRENT_DATE");
+    const caisseDuJour = recettesJour && recettesJour.total ? parseFloat(recettesJour.total) : 0;
+
     res.json({
       total_chambres: totalChambres ? parseInt(totalChambres.count) : 0,
       chambres_occupees: chambresOccupees ? parseInt(chambresOccupees.count) : 0,
       clients_inhouse: clientsInHouse ? parseInt(clientsInHouse.count) : 0,
       checkins_today: checkinsToday ? parseInt(checkinsToday.count) : 0,
-      checkouts_today: checkoutsToday ? parseInt(checkoutsToday.count) : 0
+      checkouts_today: checkoutsToday ? parseInt(checkoutsToday.count) : 0,
+      caisse_du_jour: caisseDuJour
+    });
+  } catch(e) {
+    res.status(500).json({error: e.message});
+  }
+});
+
+router.get('/analytics', requireAuth, async (req, res) => {
+  try {
+    // Évolution des réservations sur les 7 derniers jours (simplifié)
+    const eol = await db.all(`
+      SELECT DATE(created_at) as date, COUNT(*) as count 
+      FROM reservations 
+      WHERE created_at >= date('now', '-7 days')
+      GROUP BY DATE(created_at)
+      ORDER BY date ASC
+    `);
+
+    // Récupérer les données de revenus par mode de paiement
+    const revModes = await db.all(`
+      SELECT mode, SUM(montant) as total 
+      FROM transactions 
+      GROUP BY mode
+    `);
+
+    res.json({
+      reservations_7d: eol,
+      revenus_modes: revModes
     });
   } catch(e) {
     res.status(500).json({error: e.message});

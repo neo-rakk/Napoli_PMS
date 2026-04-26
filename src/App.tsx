@@ -25,6 +25,9 @@ import AgentsList from './pages/admin/AgentsList';
 import ClientsListAdmin from './pages/admin/ClientsList';
 import AdminHebergement from './pages/admin/AdminHebergement';
 import AdminFacturation from './pages/admin/AdminFacturation';
+import AdminStock from './pages/admin/AdminStock';
+import AdminReports from './pages/admin/AdminReports';
+import AdminTarifs from './pages/admin/AdminTarifs';
 import AuditLogs from './pages/admin/AuditLogs';
 import MaintenanceReception from './pages/reception/MaintenanceReception';
 
@@ -84,7 +87,10 @@ export default function App() {
           <Route path="agents" element={<AgentsList />} />
           <Route path="clients" element={<ClientsListAdmin />} />
           <Route path="hebergement" element={<AdminHebergement />} />
+          <Route path="tarifs" element={<AdminTarifs />} />
           <Route path="facturation" element={<AdminFacturation />} />
+          <Route path="stocks" element={<AdminStock />} />
+          <Route path="rapports" element={<AdminReports />} />
           <Route path="parametres" element={<AuditLogs />} />
         </Route>
 

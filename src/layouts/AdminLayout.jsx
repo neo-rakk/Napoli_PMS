@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
-import { LayoutDashboard, Users, UserCog, Building, DollarSign, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, UserCog, Building, DollarSign, Settings, LogOut, PackageSearch, TrendingUp, BadgeDollarSign } from 'lucide-react';
 
 export default function AdminLayout() {
   const { user, logout } = useAuthStore();
@@ -17,7 +17,10 @@ export default function AdminLayout() {
     { name: 'Agents', path: '/admin/agents', icon: UserCog },
     { name: 'Clients & Groupes', path: '/admin/clients', icon: Users },
     { name: 'Hébergement', path: '/admin/hebergement', icon: Building },
+    { name: 'Tarifs & Yield', path: '/admin/tarifs', icon: BadgeDollarSign },
     { name: 'Facturation & B2B', path: '/admin/facturation', icon: DollarSign },
+    { name: 'Économat & Stocks', path: '/admin/stocks', icon: PackageSearch },
+    { name: 'Rapports & Analytics', path: '/admin/rapports', icon: TrendingUp },
     { name: 'Paramètres', path: '/admin/parametres', icon: Settings },
   ];
 
