@@ -52,6 +52,13 @@ app.use('/api/clients', (req, res, next) => {
 app.use('/api/agents', require('./routes/agents.cjs'));
 app.use('/api/clients', require('./routes/clients.cjs'));
 app.use('/api/stats', require('./routes/stats.cjs'));
+app.use('/api/chambres', require('./routes/chambres.cjs'));
+app.use('/api/groupes', require('./routes/groupes.cjs'));
+app.use('/api/comptes', require('./routes/comptes.cjs'));
+app.use('/api/tarifs', require('./routes/tarifs.cjs'));
+app.use('/api/contrats', require('./routes/contrats.cjs'));
+app.use('/api/reservations', require('./routes/reservations.cjs'));
+app.use('/api/encaissements', require('./routes/encaissements.cjs'));
 // ... autres routes
 
 // API healthcheck pour valider le serveur

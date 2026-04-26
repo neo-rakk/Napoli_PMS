@@ -2,10 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '../../components/ui/Button';
 import { useAuthStore } from '../../store/authStore';
 
+import { useNavigate } from 'react-router-dom';
+
 export default function PreInscriptionsList() {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const { token } = useAuthStore();
+  const navigate = useNavigate();
 
   const fetchPreInscriptions = async () => {
     setLoading(true);
@@ -76,7 +79,7 @@ export default function PreInscriptionsList() {
                 <td className="px-6 py-4">{new Date(client.created_at).toLocaleString('fr-FR')}</td>
                 <td className="px-6 py-4 flex gap-2 justify-end">
                   <Button variant="ghost" size="sm">Refuser</Button>
-                  <Button size="sm">Check-In</Button>
+                  <Button size="sm" onClick={() => navigate(`/reception/accueil/checkin?clientId=${client.id}`)}>Check-In</Button>
                 </td>
               </tr>
             ))}

@@ -11,6 +11,10 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 
 import ReceptionLayout from './layouts/ReceptionLayout';
 import PreInscriptionsList from './pages/reception/PreInscriptionsList';
+import CheckIn from './pages/reception/CheckIn';
+import CheckOut from './pages/reception/CheckOut';
+import ChambresPlan from './pages/reception/ChambresPlan';
+import CaisseJournaliere from './pages/reception/CaisseJournaliere';
 
 // Composant placeholder pour les dashboards
 const DashboardPlaceholder = ({ title }) => (
@@ -38,13 +42,13 @@ export default function App() {
         }>
           <Route index element={<Navigate to="accueil/attente" replace />} />
           <Route path="accueil/attente" element={<PreInscriptionsList />} />
-          <Route path="accueil/checkin" element={<DashboardPlaceholder title="Check-In" />} />
-          <Route path="accueil/checkout" element={<DashboardPlaceholder title="Check-Out" />} />
+          <Route path="accueil/checkin" element={<CheckIn />} />
+          <Route path="accueil/checkout" element={<CheckOut />} />
           <Route path="groupes" element={<DashboardPlaceholder title="Groupes" />} />
           <Route path="reservations" element={<DashboardPlaceholder title="Réservations" />} />
           <Route path="planning" element={<DashboardPlaceholder title="Planning" />} />
-          <Route path="chambres" element={<DashboardPlaceholder title="Chambres" />} />
-          <Route path="caisse" element={<DashboardPlaceholder title="Caisse" />} />
+          <Route path="chambres" element={<ChambresPlan />} />
+          <Route path="caisse" element={<CaisseJournaliere />} />
         </Route>
         
         {/* Admin layout */}
