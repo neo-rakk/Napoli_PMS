@@ -83,4 +83,28 @@ router.post('/auth/supabase-admin', async (req, res) => {
 
 // Autre routes (Create, Update) à compléter...
 
+router.get('/all', requireAuth, requireRole('admin'), async (req, res) => {
+  try {
+    const agents = await db.all("SELECT id, nom, prenom, matricule, role, telephone, email FROM agents WHERE actif = 1");
+    res.json(agents);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/', requireAuth, requireRole('admin'), async (req, res) => {
+  try {
+    const { nom, prenom, matricule, role, pin, telephone, email } = req.body;
+    const pinHash = await bcrypt.hash(pin, 10);
+    
+    await db.query(`
+      INSERT INTO agents (nom, prenom, matricule, pin_hash, role, telephone, email)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+    `, [nom, prenom, matricule, pinHash, role, telephone, email]);
+    res.json({ success: true });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

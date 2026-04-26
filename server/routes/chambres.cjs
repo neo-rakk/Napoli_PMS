@@ -58,4 +58,17 @@ router.post('/:id/statut', requireAuth, async (req, res) => {
   }
 });
 
+router.post('/', requireAuth, requireRole('admin'), async (req, res) => {
+  try {
+    const { numero, bloc_nom, etage, type, capacite_max } = req.body;
+    await db.query(
+      "INSERT INTO chambres (numero, bloc_nom, etage, type, capacite_max) VALUES ($1, $2, $3, $4, $5)",
+      [numero, bloc_nom, etage, type, capacite_max]
+    );
+    res.json({success: true});
+  } catch(e) {
+    res.status(500).json({error: e.message});
+  }
+});
+
 module.exports = router;

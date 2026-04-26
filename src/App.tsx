@@ -18,12 +18,14 @@ import CaisseJournaliere from './pages/reception/CaisseJournaliere';
 import ReservationsList from './pages/reception/ReservationsList';
 import GroupesList from './pages/reception/GroupesList';
 import Planning from './pages/reception/Planning';
+import MainCourante from './pages/reception/MainCourante';
 import AdminLayout from './layouts/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AgentsList from './pages/admin/AgentsList';
 import ClientsListAdmin from './pages/admin/ClientsList';
 import AdminHebergement from './pages/admin/AdminHebergement';
 import AdminFacturation from './pages/admin/AdminFacturation';
+import AuditLogs from './pages/admin/AuditLogs';
 
 import HousekeepingLayout from './layouts/HousekeepingLayout';
 import HousekeepingDashboard from './pages/housekeeping/HousekeepingDashboard';
@@ -63,6 +65,7 @@ export default function App() {
           <Route path="planning" element={<Planning />} />
           <Route path="chambres" element={<ChambresPlan />} />
           <Route path="caisse" element={<CaisseJournaliere />} />
+          <Route path="cloture" element={<MainCourante />} />
         </Route>
         
         {/* Admin layout */}
@@ -76,7 +79,7 @@ export default function App() {
           <Route path="clients" element={<ClientsListAdmin />} />
           <Route path="hebergement" element={<AdminHebergement />} />
           <Route path="facturation" element={<AdminFacturation />} />
-          <Route path="parametres" element={<DashboardPlaceholder title="Paramètres Système" />} />
+          <Route path="parametres" element={<AuditLogs />} />
         </Route>
 
         {/* Housekeeping layout */}

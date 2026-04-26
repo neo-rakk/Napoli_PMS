@@ -72,4 +72,27 @@ router.get('/summary', requireAuth, async (req, res) => {
   }
 });
 
+router.get('/audit', requireAuth, async (req, res) => {
+  try {
+    const logs = await db.all(`
+      SELECT al.*, a.nom as agent_nom, a.prenom as agent_prenom
+      FROM audit_logs al
+      LEFT JOIN agents a ON al.agent_id = a.id
+      ORDER BY al.created_at DESC
+      LIMIT 200
+    `);
+    
+    // Parser JSON
+    logs.forEach(l => {
+      try {
+        if(l.details) l.details = JSON.parse(l.details);
+      } catch(e) {}
+    });
+    
+    res.json(logs);
+  } catch(e) {
+    res.status(500).json({error: e.message});
+  }
+});
+
 module.exports = router;
