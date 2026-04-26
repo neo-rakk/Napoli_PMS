@@ -51,4 +51,25 @@ router.get('/dashboard', requireAuth, async (req, res) => {
   }
 });
 
+router.get('/summary', requireAuth, async (req, res) => {
+  try {
+    const totalChambres = await db.get("SELECT COUNT(*) as count FROM chambres");
+    const chambresOccupees = await db.get("SELECT COUNT(*) as count FROM chambres WHERE statut IN ('occupee', 'partielle')");
+    const clientsInHouse = await db.get("SELECT COUNT(*) as count FROM clients WHERE statut IN ('enregistre', 'resident')");
+    
+    const checkinsToday = await db.get("SELECT COUNT(*) as count FROM reservations WHERE statut = 'checkin' AND DATE(created_at) = CURRENT_DATE");
+    const checkoutsToday = await db.get("SELECT COUNT(*) as count FROM reservations WHERE statut = 'checkout' AND DATE(date_depart) = CURRENT_DATE");
+
+    res.json({
+      total_chambres: totalChambres ? parseInt(totalChambres.count) : 0,
+      chambres_occupees: chambresOccupees ? parseInt(chambresOccupees.count) : 0,
+      clients_inhouse: clientsInHouse ? parseInt(clientsInHouse.count) : 0,
+      checkins_today: checkinsToday ? parseInt(checkinsToday.count) : 0,
+      checkouts_today: checkoutsToday ? parseInt(checkoutsToday.count) : 0
+    });
+  } catch(e) {
+    res.status(500).json({error: e.message});
+  }
+});
+
 module.exports = router;

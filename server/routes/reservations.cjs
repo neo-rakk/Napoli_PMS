@@ -7,6 +7,24 @@ const { logAction } = require('../middleware/auditLogger.cjs');
 const { resolveReservationPricing } = require('../services/pricingService.cjs');
 const { calculerStatutChambre } = require('../utils/statusHelper.cjs');
 
+router.get('/', requireAuth, async (req, res) => {
+  try {
+    const query = `
+      SELECT r.*, c.nom, c.prenom, ch.numero as chambre_numero, b.nom as bloc_nom
+      FROM reservations r
+      JOIN clients c ON r.client_id = c.id
+      JOIN chambres ch ON r.chambre_id = ch.id
+      LEFT JOIN blocs b ON ch.bloc_id = b.id
+      ORDER BY r.created_at DESC
+      LIMIT 300
+    `;
+    const result = await db.all(query);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.post('/checkin', requireAuth, requireRole('accueil', 'admin'), async (req, res) => {
   const { 
     client_id, chambre_id, date_checkout_prevu, formule, mode_facturation,
