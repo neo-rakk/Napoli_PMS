@@ -60,6 +60,7 @@ app.use('/api/contrats', require('./routes/contrats.cjs'));
 app.use('/api/reservations', require('./routes/reservations.cjs'));
 app.use('/api/encaissements', require('./routes/encaissements.cjs'));
 app.use('/api/maintenance', require('./routes/maintenance.cjs'));
+app.use('/api/pos', require('./routes/pos.cjs'));
 // ... autres routes
 
 // API healthcheck pour valider le serveur

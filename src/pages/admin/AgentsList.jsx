@@ -83,7 +83,9 @@ export default function AgentsList() {
                   <option value="chef_reception">Chef de Réception</option>
                   <option value="admin">Administrateur</option>
                   <option value="housekeeping">Gouvernance</option>
+                  <option value="maintenance">Maintenance</option>
                   <option value="securite">Agents de sécurité</option>
+                  <option value="pos">Agent Caisse (POS)</option>
                 </select>
               </div>
               <div className="pt-4 flex justify-end gap-3">

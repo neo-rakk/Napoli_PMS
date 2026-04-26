@@ -34,6 +34,8 @@ import SecurityLayout from './layouts/SecurityLayout';
 import SecurityDashboard from './pages/security/SecurityDashboard';
 import MaintenanceLayout from './layouts/MaintenanceLayout';
 import MaintenanceDashboard from './pages/maintenance/MaintenanceDashboard';
+import POSLayout from './layouts/POSLayout';
+import POSDashboard from './pages/pos/POSDashboard';
 
 // Composant placeholder pour les dashboards
 const DashboardPlaceholder = ({ title }) => (
@@ -111,6 +113,15 @@ export default function App() {
           </ProtectedRoute>
         }>
           <Route index element={<SecurityDashboard />} />
+        </Route>
+
+        {/* POS layout */}
+        <Route path="/pos" element={
+          <ProtectedRoute allowedRoles={['pos', 'reception', 'admin']}>
+            <POSLayout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<POSDashboard />} />
         </Route>
 
         {/* 404 */}
