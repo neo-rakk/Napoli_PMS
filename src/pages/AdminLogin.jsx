@@ -57,7 +57,11 @@ export default function AdminLogin() {
       }
     } catch (err) {
       console.error(err);
-      setError('Erreur de connexion serveur');
+      if (err.message && err.message.includes('getaddrinfo')) {
+        setError('Configuration base de données invalide (POSTGRES_URL_NON_POOLING)');
+      } else {
+        setError('Erreur: ' + err.message);
+      }
     } finally {
       setLoading(false);
     }
