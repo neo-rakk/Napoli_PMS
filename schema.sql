@@ -1,4 +1,13 @@
--- Schema complet
+-- System Logs
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id BIGSERIAL PRIMARY KEY,
+  agent_id BIGINT REFERENCES agents(id),
+  action_type TEXT NOT NULL,
+  entity_type TEXT NOT NULL,
+  entity_id TEXT,
+  details TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 CREATE TABLE IF NOT EXISTS agents (
   id                   BIGSERIAL PRIMARY KEY,
   nom                  TEXT NOT NULL,

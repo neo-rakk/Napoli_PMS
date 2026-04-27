@@ -14,7 +14,7 @@ export default function SecurityLayout() {
 
   return (
     <div className="min-h-screen bg-neutral-900 text-neutral-100 flex flex-col">
-      <header className="bg-neutral-950 p-4 flex justify-between items-center border-b border-neutral-800">
+      <header className="bg-neutral-950 p-4 flex justify-between items-center border-b border-neutral-800 shrink-0">
         <div className="flex items-center gap-3">
           <ShieldCheck className="w-6 h-6 text-red-500" />
           <h1 className="text-xl font-bold tracking-widest uppercase">Poste de Contrôle</h1>
@@ -28,6 +28,12 @@ export default function SecurityLayout() {
           </button>
         </div>
       </header>
+
+      {user?.role === 'admin' && (
+        <div className="bg-red-600 text-white px-6 py-2 text-xs font-bold flex items-center justify-center gap-2 shrink-0 animate-pulse">
+          MODE ADMINISTRATEUR ACTIF : VOUS AVEZ TOUS LES PRIVILÈGES SUR CE MODULE.
+        </div>
+      )}
 
       <main className="flex-1 overflow-auto p-4 md:p-8">
         <Outlet />

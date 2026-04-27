@@ -9,7 +9,13 @@ export default function AuditLogs() {
   useEffect(() => {
     fetch('/api/stats/audit', { headers: { 'Authorization': `Bearer ${token}` } })
       .then(r => r.json())
-      .then(setLogs)
+      .then(data => {
+        if (Array.isArray(data)) {
+          setLogs(data);
+        } else {
+          console.error("Erreur serveur:", data);
+        }
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [token]);

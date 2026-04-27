@@ -14,7 +14,7 @@ export default function POSLayout() {
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
-      <header className="bg-emerald-900 text-white p-4 flex justify-between items-center shadow-md z-10">
+      <header className="bg-emerald-900 text-white p-4 flex justify-between items-center shadow-md z-10 shrink-0">
         <div className="flex items-center gap-3">
           <div className="bg-emerald-800 p-2 rounded-lg">
             <Coffee className="w-6 h-6 text-emerald-200" />
@@ -34,6 +34,12 @@ export default function POSLayout() {
           </button>
         </div>
       </header>
+
+      {user?.role === 'admin' && (
+        <div className="bg-red-600 text-white px-6 py-2 text-xs font-bold flex items-center justify-center gap-2 shrink-0 animate-pulse uppercase">
+          Mode Administrateur Actif : Privilèges complets.
+        </div>
+      )}
 
       <main className="flex-1 overflow-hidden flex flex-col">
         <Outlet />

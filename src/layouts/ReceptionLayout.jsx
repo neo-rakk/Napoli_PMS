@@ -144,6 +144,13 @@ export default function ReceptionLayout() {
           </div>
         </header>
 
+        {user?.role === 'admin' && (
+          <div className="bg-red-600 text-white px-6 py-2 text-xs font-bold flex items-center justify-center gap-2 shrink-0 animate-pulse">
+            <Settings size={14} className="animate-spin-slow" />
+            MODE ADMINISTRATEUR ACTIF : VOUS AVEZ TOUS LES PRIVILÈGES SUR CE MODULE. TOUTES LES ACTIONS SONT JOURNALISÉES.
+          </div>
+        )}
+
         <div className="flex-1 overflow-y-auto">
           <Outlet />
         </div>
