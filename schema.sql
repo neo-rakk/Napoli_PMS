@@ -409,3 +409,98 @@ BEGIN
   END IF;
 END;
 $$ LANGUAGE plpgsql;
+
+-- Enable Row Level Security
+ALTER TABLE agents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE blocs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE chambres ENABLE ROW LEVEL SECURITY;
+ALTER TABLE groupes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tarifs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE grands_comptes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE contrats ENABLE ROW LEVEL SECURITY;
+ALTER TABLE bons_de_commande ENABLE ROW LEVEL SECURITY;
+ALTER TABLE factures_globales ENABLE ROW LEVEL SECURITY;
+ALTER TABLE reservations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sessions_caisse ENABLE ROW LEVEL SECURITY;
+ALTER TABLE encaissements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE housekeeping ENABLE ROW LEVEL SECURITY;
+ALTER TABLE hk_consommables_demandes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE maintenance ENABLE ROW LEVEL SECURITY;
+ALTER TABLE maintenance_pieces_demandees ENABLE ROW LEVEL SECURITY;
+ALTER TABLE presences ENABLE ROW LEVEL SECURITY;
+ALTER TABLE audit_log ENABLE ROW LEVEL SECURITY;
+ALTER TABLE facture_globale_lignes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE paiements_b2b ENABLE ROW LEVEL SECURITY;
+ALTER TABLE reservation_extras ENABLE ROW LEVEL SECURITY;
+
+-- Add basic Open policies since backend is server-side with Node.js
+DO $$ 
+BEGIN
+    -- agents
+    DROP POLICY IF EXISTS "Allow all operations" ON agents;
+    CREATE POLICY "Allow all operations" ON agents FOR ALL USING (true);
+    -- blocs
+    DROP POLICY IF EXISTS "Allow all operations" ON blocs;
+    CREATE POLICY "Allow all operations" ON blocs FOR ALL USING (true);
+    -- chambres
+    DROP POLICY IF EXISTS "Allow all operations" ON chambres;
+    CREATE POLICY "Allow all operations" ON chambres FOR ALL USING (true);
+    -- groupes
+    DROP POLICY IF EXISTS "Allow all operations" ON groupes;
+    CREATE POLICY "Allow all operations" ON groupes FOR ALL USING (true);
+    -- clients
+    DROP POLICY IF EXISTS "Allow all operations" ON clients;
+    CREATE POLICY "Allow all operations" ON clients FOR ALL USING (true);
+    -- tarifs
+    DROP POLICY IF EXISTS "Allow all operations" ON tarifs;
+    CREATE POLICY "Allow all operations" ON tarifs FOR ALL USING (true);
+    -- grands_comptes
+    DROP POLICY IF EXISTS "Allow all operations" ON grands_comptes;
+    CREATE POLICY "Allow all operations" ON grands_comptes FOR ALL USING (true);
+    -- contrats
+    DROP POLICY IF EXISTS "Allow all operations" ON contrats;
+    CREATE POLICY "Allow all operations" ON contrats FOR ALL USING (true);
+    -- bons_de_commande
+    DROP POLICY IF EXISTS "Allow all operations" ON bons_de_commande;
+    CREATE POLICY "Allow all operations" ON bons_de_commande FOR ALL USING (true);
+    -- factures_globales
+    DROP POLICY IF EXISTS "Allow all operations" ON factures_globales;
+    CREATE POLICY "Allow all operations" ON factures_globales FOR ALL USING (true);
+    -- reservations
+    DROP POLICY IF EXISTS "Allow all operations" ON reservations;
+    CREATE POLICY "Allow all operations" ON reservations FOR ALL USING (true);
+    -- sessions_caisse
+    DROP POLICY IF EXISTS "Allow all operations" ON sessions_caisse;
+    CREATE POLICY "Allow all operations" ON sessions_caisse FOR ALL USING (true);
+    -- encaissements
+    DROP POLICY IF EXISTS "Allow all operations" ON encaissements;
+    CREATE POLICY "Allow all operations" ON encaissements FOR ALL USING (true);
+    -- housekeeping
+    DROP POLICY IF EXISTS "Allow all operations" ON housekeeping;
+    CREATE POLICY "Allow all operations" ON housekeeping FOR ALL USING (true);
+    -- hk_consommables_demandes
+    DROP POLICY IF EXISTS "Allow all operations" ON hk_consommables_demandes;
+    CREATE POLICY "Allow all operations" ON hk_consommables_demandes FOR ALL USING (true);
+    -- maintenance
+    DROP POLICY IF EXISTS "Allow all operations" ON maintenance;
+    CREATE POLICY "Allow all operations" ON maintenance FOR ALL USING (true);
+    -- maintenance_pieces_demandees
+    DROP POLICY IF EXISTS "Allow all operations" ON maintenance_pieces_demandees;
+    CREATE POLICY "Allow all operations" ON maintenance_pieces_demandees FOR ALL USING (true);
+    -- presences
+    DROP POLICY IF EXISTS "Allow all operations" ON presences;
+    CREATE POLICY "Allow all operations" ON presences FOR ALL USING (true);
+    -- audit_log
+    DROP POLICY IF EXISTS "Allow all operations" ON audit_log;
+    CREATE POLICY "Allow all operations" ON audit_log FOR ALL USING (true);
+    -- facture_globale_lignes
+    DROP POLICY IF EXISTS "Allow all operations" ON facture_globale_lignes;
+    CREATE POLICY "Allow all operations" ON facture_globale_lignes FOR ALL USING (true);
+    -- paiements_b2b
+    DROP POLICY IF EXISTS "Allow all operations" ON paiements_b2b;
+    CREATE POLICY "Allow all operations" ON paiements_b2b FOR ALL USING (true);
+    -- reservation_extras
+    DROP POLICY IF EXISTS "Allow all operations" ON reservation_extras;
+    CREATE POLICY "Allow all operations" ON reservation_extras FOR ALL USING (true);
+END $$;
