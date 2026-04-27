@@ -25,6 +25,11 @@ export default function POSLayout() {
           </div>
         </div>
         <div className="flex items-center gap-4">
+          {user?.role === 'admin' && (
+            <button onClick={() => navigate('/admin')} className="hidden sm:flex text-sm bg-amber-500 hover:bg-amber-400 text-amber-900 font-bold px-3 py-1 rounded-full items-center gap-2">
+              Retour Admin
+            </button>
+          )}
           <div className="text-sm bg-emerald-800 px-3 py-1.5 rounded-full flex items-center gap-2 font-medium">
             <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
             Caisse: {user?.prenom} {user?.nom}

@@ -7,7 +7,7 @@ export default function AgentsList() {
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({ nom: '', prenom: '', matricule: '', role: 'reception', pin: '' });
+  const [formData, setFormData] = useState({ nom: '', prenom: '', role: 'reception' });
 
   const fetchAgents = async () => {
     setLoading(true);
@@ -26,17 +26,29 @@ export default function AgentsList() {
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
+      // Generate matricule and pin here
+      const autoMatricule = 'AGT-' + Math.floor(1000 + Math.random() * 9000);
+      const autoPin = Math.floor(100000 + Math.random() * 900000).toString();
+      
+      const payload = {
+        ...formData,
+        matricule: autoMatricule,
+        pin: autoPin
+      };
+
       const res = await fetch('/api/agents', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
       if(res.ok) {
+        alert(`Agent créé !\n\nMatricule: ${autoMatricule}\nPIN Temporaire: ${autoPin}\n\nVeuillez noter ces informations.`);
         setShowModal(false);
-        setFormData({ nom: '', prenom: '', matricule: '', role: 'reception', pin: '' });
+        setFormData({ nom: '', prenom: '', role: 'reception' });
         fetchAgents();
       } else {
-        alert('Erreur lors de la création');
+        const errorData = await res.json();
+        alert('Erreur lors de la création : ' + (errorData.error || 'Inconnue'));
       }
     } catch(e) { console.error(e); }
   };
@@ -66,15 +78,8 @@ export default function AgentsList() {
                   <input required type="text" className="w-full border-slate-300 rounded-md" value={formData.prenom} onChange={e => setFormData({...formData, prenom: e.target.value})} />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Matricule</label>
-                  <input required type="text" className="w-full border-slate-300 rounded-md" value={formData.matricule} onChange={e => setFormData({...formData, matricule: e.target.value})} />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Code PIN</label>
-                  <input required type="text" maxLength={4} className="w-full border-slate-300 rounded-md font-mono" value={formData.pin} onChange={e => setFormData({...formData, pin: e.target.value})} />
-                </div>
+              <div className="bg-slate-50 p-3 rounded-md text-sm text-slate-600 mb-4 border border-slate-200">
+                Le matricule et le code PIN à 6 chiffres seront générés automatiquement.
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Rôle</label>

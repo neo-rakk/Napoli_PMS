@@ -25,6 +25,11 @@ export default function MaintenanceLayout() {
           </div>
         </div>
         <div className="flex items-center gap-4">
+          {user?.role === 'admin' && (
+            <button onClick={() => navigate('/admin')} className="hidden sm:flex text-sm bg-amber-500 hover:bg-amber-400 text-amber-900 font-bold px-3 py-1 rounded-full items-center gap-2">
+              Retour Admin
+            </button>
+          )}
           <div className="text-xs sm:text-sm font-bold bg-orange-700 px-3 py-1.5 rounded-full flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
             <span className="hidden sm:inline">{user?.prenom} {user?.nom}</span>

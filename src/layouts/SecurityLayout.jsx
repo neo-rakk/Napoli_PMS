@@ -20,6 +20,11 @@ export default function SecurityLayout() {
           <h1 className="text-xl font-bold tracking-widest uppercase">Poste de Contrôle</h1>
         </div>
         <div className="flex items-center gap-4">
+          {user?.role === 'admin' && (
+            <button onClick={() => navigate('/admin')} className="hidden sm:flex text-sm bg-amber-500 hover:bg-amber-400 text-amber-900 font-bold px-3 py-1 rounded items-center gap-2">
+              Retour Admin
+            </button>
+          )}
           <div className="text-sm bg-neutral-800 px-3 py-1 rounded border border-neutral-700">
             {user?.nom} ({user?.role})
           </div>
