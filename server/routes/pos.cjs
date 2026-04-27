@@ -8,7 +8,7 @@ const { requireAuth } = require('../middleware/auth.cjs');
   try {
     await db.query(`
       CREATE TABLE IF NOT EXISTS pos_products (
-        id INTEGER PRIMARY KEY AUTOINCREMENT, 
+        id SERIAL PRIMARY KEY, 
         nom TEXT, 
         categorie TEXT, 
         prix REAL, 
@@ -19,18 +19,18 @@ const { requireAuth } = require('../middleware/auth.cjs');
     
     await db.query(`
       CREATE TABLE IF NOT EXISTS pos_orders (
-        id INTEGER PRIMARY KEY AUTOINCREMENT, 
+        id SERIAL PRIMARY KEY, 
         agent_id INTEGER, 
         methode_paiement TEXT, -- 'cash', 'tpe', 'chambre'
         chambre_id INTEGER, 
         total REAL, 
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
     
     await db.query(`
       CREATE TABLE IF NOT EXISTS pos_order_items (
-        id INTEGER PRIMARY KEY AUTOINCREMENT, 
+        id SERIAL PRIMARY KEY, 
         order_id INTEGER, 
         product_id INTEGER, 
         quantite INTEGER, 
