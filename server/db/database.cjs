@@ -2,7 +2,7 @@
 require('dotenv').config({ override: true });
 const { Pool } = require('pg');
 
-const connectionString = (process.env.POSTGRES_URL_NON_POOLING || process.env.DATABASE_URL);
+const connectionString = (process.env.POSTGRES_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL_NON_POOLING);
 
 if (!connectionString && (process.env.NODE_ENV === 'production' || process.env.VERCEL)) {
   throw new Error('POSTGRES_URL_NON_POOLING manquant en production');

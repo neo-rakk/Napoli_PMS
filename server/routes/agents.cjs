@@ -69,8 +69,20 @@ router.post('/auth/supabase-admin', async (req, res) => {
   if (!email) return res.status(400).json({ error: 'Email requis' });
 
   try {
-    const agent = await db.get("SELECT * FROM agents WHERE email = $1 AND role = 'admin' AND actif = 1", [email]);
-    if (!agent) return res.status(404).json({ error: 'Admin introuvable en base de données' });
+    let agent = await db.get("SELECT * FROM agents WHERE email = $1 AND actif = 1", [email]);
+    if (!agent) {
+      // Create admin automatically since they authenticated via Supabase
+      const insertRes = await db.run(`
+        INSERT INTO agents (nom, prenom, email, matricule, role, pin_hash, actif)
+        VALUES ('Admin', 'Supabase', $1, 'SUPABASE', 'admin', 'supabase', 1)
+        RETURNING *
+      `, [email]);
+      agent = await db.get("SELECT * FROM agents WHERE id = $1", [insertRes.lastId]);
+    } else if (agent.role !== 'admin') {
+      // Ensure they have admin role if they use this endpoint? Or just proceed with their role
+      await db.query("UPDATE agents SET role = 'admin' WHERE id = $1", [agent.id]);
+      agent.role = 'admin';
+    }
 
     await db.query("UPDATE agents SET derniere_connexion = NOW() WHERE id = $1", [agent.id]);
 

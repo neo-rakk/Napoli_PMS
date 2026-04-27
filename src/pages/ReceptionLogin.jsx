@@ -59,7 +59,8 @@ export default function ReceptionLogin() {
         setPin('');
       }
     } catch (err) {
-      setError('Erreur de connexion serveur');
+      console.error(err);
+      setError('Erreur API: ' + err.message);
       setPin('');
     } finally {
       setLoading(false);

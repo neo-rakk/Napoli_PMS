@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { Button } from '../components/ui/Button';
 import { ShieldCheck, AlertCircle, ArrowLeft } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 export default function AdminLogin() {
   const [email, setEmail] = useState('');
@@ -20,21 +21,37 @@ export default function AdminLogin() {
     setError('');
 
     try {
-      const res = await fetch('/api/agents/auth/admin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
-      
-      const data = await res.json();
-      
-      if (res.ok) {
-        login(data.agent, data.token);
-        navigate('/admin');
-      } else {
-        setError(data.error || 'Identifiants incorrects');
+
+      if (signInError) {
+        setError(signInError.message === 'Invalid login credentials' ? 'Identifiants incorrects' : signInError.message);
+        setLoading(false);
+        return;
+      }
+
+      if (data.user && data.session) {
+        // Get custom backend token so API requests authenticate properly
+        const verifyRes = await fetch('/api/agents/auth/supabase-admin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: data.user.email })
+        });
+        
+        const backendData = await verifyRes.json();
+        
+        if (verifyRes.ok) {
+          login(backendData.agent, backendData.token);
+          navigate('/admin');
+        } else {
+          setError(backendData.error || 'Erreur lors de la synchronisation backend');
+          setLoading(false);
+        }
       }
     } catch (err) {
+      console.error(err);
       setError('Erreur de connexion serveur');
     } finally {
       setLoading(false);
