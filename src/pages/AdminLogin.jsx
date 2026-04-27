@@ -40,6 +40,11 @@ export default function AdminLogin() {
           body: JSON.stringify({ email: data.user.email })
         });
         
+        const contentType = verifyRes.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+           throw new Error('Le serveur a renvoyé une réponse invalide (HTML). Erreur de base de données probable.');
+        }
+
         const backendData = await verifyRes.json();
         
         if (verifyRes.ok) {

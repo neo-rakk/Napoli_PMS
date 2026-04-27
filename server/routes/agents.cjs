@@ -72,11 +72,12 @@ router.post('/auth/supabase-admin', async (req, res) => {
     let agent = await db.get("SELECT * FROM agents WHERE email = $1 AND actif = 1", [email]);
     if (!agent) {
       // Create admin automatically since they authenticated via Supabase
+      const uniqueMatricule = 'SUPABASE-' + Date.now();
       const insertRes = await db.run(`
         INSERT INTO agents (nom, prenom, email, matricule, role, pin_hash, actif)
-        VALUES ('Admin', 'Supabase', $1, 'SUPABASE', 'admin', 'supabase', 1)
+        VALUES ('Admin', 'Supabase', $1, $2, 'admin', 'supabase', 1)
         RETURNING *
-      `, [email]);
+      `, [email, uniqueMatricule]);
       agent = await db.get("SELECT * FROM agents WHERE id = $1", [insertRes.lastId]);
     } else if (agent.role !== 'admin') {
       // Ensure they have admin role if they use this endpoint? Or just proceed with their role

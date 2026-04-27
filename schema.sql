@@ -6,12 +6,18 @@ CREATE TABLE IF NOT EXISTS agents (
   role                 TEXT NOT NULL CHECK(role IN ('admin','accueil','caisse','housekeeping','maintenance','securite')),
   pin_hash             TEXT NOT NULL,
   email                TEXT UNIQUE,
+  matricule            TEXT UNIQUE,
+  telephone            TEXT,
   actif                INTEGER NOT NULL DEFAULT 1,
   doit_changer_pin     INTEGER NOT NULL DEFAULT 1,
   photo                TEXT,
   derniere_connexion   TIMESTAMP WITH TIME ZONE,
   created_at           TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- For existing tables without these columns:
+ALTER TABLE agents ADD COLUMN IF NOT EXISTS matricule TEXT UNIQUE;
+ALTER TABLE agents ADD COLUMN IF NOT EXISTS telephone TEXT;
 
 CREATE TABLE IF NOT EXISTS blocs (
   id          BIGSERIAL PRIMARY KEY,
