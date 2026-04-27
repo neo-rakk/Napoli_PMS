@@ -4,15 +4,25 @@ const fs = require('fs');
 const path = require('path');
 
 async function setup() {
-  const connectionString = process.env.POSTGRES_URL_NON_POOLING || process.env.DATABASE_URL || process.env.POSTGRES_URL;
+  const connectionString = (process.env.POSTGRES_URL_NON_POOLING || process.env.DATABASE_URL || process.env.POSTGRES_URL);
   if (!connectionString) {
     console.log('[Setup BDD] Ignoré : POSTGRES_URL_NON_POOLING ou DATABASE_URL non trouvés.');
     return;
   }
+  
+  let cleanConnectionString = connectionString;
+  try {
+    const url = require('url');
+    const parsedUri = new url.URL(connectionString);
+    parsedUri.search = ''; // Delete all query parameters safely
+    cleanConnectionString = parsedUri.toString();
+  } catch (e) {
+    // Ignite if not a valid URL
+  }
 
   const { Pool } = require('pg');
   const pool = new Pool({
-    connectionString,
+    connectionString: cleanConnectionString,
     ssl: { rejectUnauthorized: false }
   });
 
