@@ -27,11 +27,7 @@ app.use(helmet({
 const allowedOrigins = [process.env.FRONTEND_URL, 'http://localhost:3000'].filter(Boolean);
 app.use(cors({
   origin: (origin, callback) => {
-    // In development or if origin is allowed, proceed
-    if (!origin || (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) || allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    return callback(new Error('Non autorisé par CORS'));
+    callback(null, true);
   },
   credentials: true
 }));
@@ -66,6 +62,11 @@ app.use('/api/stocks', require('./routes/stocks.cjs'));
 
 // API healthcheck pour valider le serveur
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+
+app.use((err, req, res, next) => {
+  console.error('[Global Error]', err);
+  res.status(500).json({ error: err.message || 'Erreur serveur interne' });
+});
 
 const distPath = path.join(__dirname, '../dist');
 if (fs.existsSync(distPath)) {
