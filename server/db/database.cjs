@@ -9,11 +9,7 @@ if (!connectionString && (process.env.NODE_ENV === 'production' || process.env.V
 }
 
 if (connectionString && (!connectionString.startsWith('postgres://') && !connectionString.startsWith('postgresql://'))) {
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error('POSTGRES_URL_NON_POOLING doit commencer par postgres://');
-  } else {
-    console.warn('[DB] Attention : POSTGRES_URL_NON_POOLING ne commence pas par postgres://');
-  }
+  console.warn('[DB] Attention : L\'URL de la base de données ne commence pas par postgres://. Veuillez vérifier vos secrets.');
 }
 
 if (connectionString) {
