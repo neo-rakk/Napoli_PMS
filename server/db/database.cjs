@@ -8,6 +8,18 @@ if (!connectionString && (process.env.NODE_ENV === 'production' || process.env.V
   throw new Error('POSTGRES_URL_NON_POOLING manquant en production');
 }
 
+if (connectionString && (!connectionString.startsWith('postgres://') && !connectionString.startsWith('postgresql://'))) {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('POSTGRES_URL_NON_POOLING doit commencer par postgres://');
+  } else {
+    console.warn('[DB] Attention : POSTGRES_URL_NON_POOLING ne commence pas par postgres://');
+  }
+}
+
+if (connectionString) {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+}
+
 let cleanConnectionString = connectionString;
 if (connectionString) {
   try {

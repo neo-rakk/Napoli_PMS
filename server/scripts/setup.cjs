@@ -10,6 +10,13 @@ async function setup() {
     return;
   }
   
+  if (!connectionString.startsWith('postgres://') && !connectionString.startsWith('postgresql://')) {
+    console.log('[Setup BDD] Ignoré : POSTGRES_URL_NON_POOLING ne commence pas par postgres://. Veuillez vérifier vos secrets (il faut l\'URL complète).');
+    return;
+  }
+  
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
   let cleanConnectionString = connectionString;
   try {
     const url = require('url');
