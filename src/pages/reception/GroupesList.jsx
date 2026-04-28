@@ -62,7 +62,7 @@ export default function GroupesList() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {loading && <div className="col-span-full text-center py-8 text-slate-500">Chargement...</div>}
         {!loading && groupes.length === 0 && <div className="col-span-full text-center py-8 text-slate-500">Aucun groupe enregistré.</div>}
-        {!loading && groupes.map(g => (
+        {!loading && Array.isArray(groupes) && groupes.map(g => (
           <div key={g.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow">
             <div className="flex justify-between items-start mb-4">
                <div>

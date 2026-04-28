@@ -92,7 +92,7 @@ export default function CheckOut() {
             <tbody className="divide-y divide-slate-100">
               {loading && <tr><td colSpan="5" className="p-4 text-center">Chargement...</td></tr>}
               {!loading && reservations.length === 0 && <tr><td colSpan="5" className="p-4 text-center">Aucun départ en attente de facturation direct.</td></tr>}
-              {reservations.map(r => (
+              {Array.isArray(reservations) && reservations.map(r => (
                 <tr key={r.reservation_id} className={`hover:bg-slate-50 ${selectedRes?.reservation_id === r.reservation_id ? 'bg-emerald-50' : ''}`}>
                   <td className="px-4 py-3 font-bold text-emerald-700">{r.chambre}</td>
                   <td className="px-4 py-3 font-semibold">{r.nom} {r.prenom}</td>

@@ -146,9 +146,7 @@ export default function CheckIn() {
               <Button type="submit" disabled={searching}>Chercher</Button>
             </form>
             
-            {searchResults.length > 0 && (
-              <div className="space-y-2">
-                {searchResults.map(c => (
+            {Array.isArray(searchResults) && searchResults.map(c => (
                   <div key={c.id} className="p-4 border rounded-lg flex justify-between items-center hover:border-emerald-500 cursor-pointer transition-colors" onClick={() => selectClient(c)}>
                     <div>
                       <div className="font-bold text-slate-800">{c.nom} <span className="font-normal capitalize">{c.prenom}</span></div>
@@ -157,9 +155,7 @@ export default function CheckIn() {
                     <Button variant="secondary" size="sm">Sélectionner</Button>
                   </div>
                 ))}
-              </div>
-            )}
-            {searchResults.length === 0 && searchQuery && !searching && (
+            {(!Array.isArray(searchResults) || searchResults.length === 0) && searchQuery && !searching && (
               <p className="text-slate-500">Aucun résultat pour cette recherche (statut "en_attente" obligatoire).</p>
             )}
           </div>
@@ -232,7 +228,7 @@ export default function CheckIn() {
                     value={formData.chambre_id} onChange={e => setFormData({...formData, chambre_id: e.target.value})}
                   >
                     <option value="">Sélectionner une chambre disponible</option>
-                    {chambres.map(c => (
+                    {Array.isArray(chambres) && chambres.map(c => (
                       <option key={c.id} value={c.id}>
                         Ch. {c.numero} ({c.type} · Bloc {c.bloc_nom}) — {c.statut} ({c.nb_occupants_actuels}/{c.capacite_max})
                       </option>
@@ -288,7 +284,7 @@ export default function CheckIn() {
                          value={formData.grand_compte_id} onChange={e => handleGCChange(e.target.value)}
                        >
                          <option value="">Sélectionner un Grand Compte</option>
-                         {comptes.map(gc => <option key={gc.id} value={gc.id}>{gc.nom} (NIF: {gc.nif})</option>)}
+                         {Array.isArray(comptes) && comptes.map(gc => <option key={gc.id} value={gc.id}>{gc.nom} (NIF: {gc.nif})</option>)}
                        </select>
                      </div>
                      <div>
@@ -298,7 +294,7 @@ export default function CheckIn() {
                          value={formData.bon_commande_id} onChange={e => setFormData({...formData, bon_commande_id: e.target.value})}
                        >
                          <option value="">Sélectionner un BDC</option>
-                         {bonsCommande.map(bdc => <option key={bdc.id} value={bdc.id}>{bdc.reference_interne} (Plafond: {bdc.montant_plafond})</option>)}
+                         {Array.isArray(bonsCommande) && bonsCommande.map(bdc => <option key={bdc.id} value={bdc.id}>{bdc.reference_interne} (Plafond: {bdc.montant_plafond})</option>)}
                        </select>
                      </div>
                   </div>

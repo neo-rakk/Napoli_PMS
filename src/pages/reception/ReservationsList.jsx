@@ -23,7 +23,7 @@ export default function ReservationsList() {
     fetchReservations();
   }, [token]);
 
-  const filteredReservations = reservations.filter(r => {
+  const filteredReservations = (Array.isArray(reservations) ? reservations : []).filter(r => {
     if (filter === 'inhouse' && r.statut !== 'checkin') return false;
     if (filter === 'checkout' && r.statut !== 'checkout') return false;
     if (search) {
