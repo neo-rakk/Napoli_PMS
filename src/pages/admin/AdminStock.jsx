@@ -85,7 +85,7 @@ export default function AdminStock() {
         {loading && <div className="col-span-full text-center py-8 text-slate-500">Chargement...</div>}
         {!loading && articles.length === 0 && <div className="col-span-full text-center py-8 text-slate-500">Aucun article en stock.</div>}
         
-        {articles.map(a => (
+        {Array.isArray(articles) && articles.map(a => (
            <div key={a.id} className={`bg-white rounded-2xl shadow-sm border p-5 flex flex-col ${a.quantite_actuelle <= a.seuil_alerte ? 'border-red-300' : 'border-slate-200'}`}>
               <div className="flex justify-between items-start mb-2">
                  <span className="px-2 py-1 text-xs font-bold uppercase rounded bg-slate-100 text-slate-600">{a.categorie}</span>

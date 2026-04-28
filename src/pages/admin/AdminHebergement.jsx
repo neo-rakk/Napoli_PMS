@@ -100,7 +100,7 @@ export default function AdminHebergement() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {chambres.map(c => (
+            {(Array.isArray(chambres) ? chambres : []).map(c => (
               <tr key={c.id}>
                 <td className="px-6 py-4 font-bold text-slate-800">{c.numero}</td>
                 <td className="px-6 py-4">{c.bloc_nom}</td>

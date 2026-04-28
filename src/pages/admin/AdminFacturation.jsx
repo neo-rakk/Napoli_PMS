@@ -122,7 +122,7 @@ export default function AdminFacturation() {
           {!loading && comptes.length === 0 && <div className="p-8 text-center text-slate-500">Aucun grand compte enregistré.</div>}
           
           <div className="divide-y divide-slate-100">
-            {comptes.map(c => (
+            {Array.isArray(comptes) && comptes.map(c => (
               <div 
                 key={c.id} 
                 className={`p-4 cursor-pointer hover:bg-slate-50 transition-colors flex items-center justify-between ${selectedCompte?.id === c.id ? 'bg-emerald-50 border-l-4 border-emerald-600' : ''}`}
@@ -174,9 +174,9 @@ export default function AdminFacturation() {
                      <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2"><FileSignature className="w-5 h-5 text-emerald-500" /> Accords & Contrats</h3>
                      <Button size="sm" onClick={() => setShowContratModal(true)}>Ajouter un Contrat</Button>
                   </div>
-                  {contrats.length === 0 ? <p className="text-slate-500 text-center py-8">Aucun contrat défini pour ce compte.</p> : (
+                  {!contrats || contrats.length === 0 ? <p className="text-slate-500 text-center py-8">Aucun contrat défini pour ce compte.</p> : (
                     <div className="grid gap-4 sm:grid-cols-2">
-                       {contrats.map(ct => (
+                       {Array.isArray(contrats) && contrats.map(ct => (
                           <div key={ct.id} className="border border-slate-200 p-4 rounded-xl shadow-sm hover:border-emerald-300">
                              <div className="flex justify-between items-start mb-2">
                                <div className="font-bold text-emerald-900">{ct.reference}</div>
@@ -199,7 +199,7 @@ export default function AdminFacturation() {
                      <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2"><FileText className="w-5 h-5 text-emerald-500" /> Bons de Commande</h3>
                      <Button size="sm" onClick={() => setShowBdcModal(true)}>Nouveau BDC</Button>
                   </div>
-                  {bdc.length === 0 ? <p className="text-slate-500 text-center py-8">Aucun BDC enregistré.</p> : (
+                  {!bdc || bdc.length === 0 ? <p className="text-slate-500 text-center py-8">Aucun BDC enregistré.</p> : (
                     <table className="w-full text-left text-sm text-slate-600">
                        <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-xs">
                           <tr>
@@ -210,7 +210,7 @@ export default function AdminFacturation() {
                           </tr>
                        </thead>
                        <tbody className="divide-y divide-slate-100">
-                          {bdc.map(b => (
+                          {Array.isArray(bdc) && bdc.map(b => (
                              <tr key={b.id} className="hover:bg-slate-50">
                                 <td className="px-4 py-3 font-bold text-slate-800">{b.reference_interne}</td>
                                 <td className="px-4 py-3 text-right font-medium">{b.montant_plafond.toLocaleString()} DZD</td>

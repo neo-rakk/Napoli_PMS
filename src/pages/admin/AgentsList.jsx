@@ -117,7 +117,7 @@ export default function AgentsList() {
           <tbody className="divide-y divide-slate-100">
             {loading && <tr><td colSpan="6" className="p-6 text-center">Chargement...</td></tr>}
             {!loading && agents.length === 0 && <tr><td colSpan="6" className="p-6 text-center">Aucun agent trouvé.</td></tr>}
-            {agents.map(a => (
+            {Array.isArray(agents) && agents.map(a => (
                <tr key={a.id} className="hover:bg-slate-50">
                  <td className="px-6 py-4 font-bold text-slate-800">{a.nom} {a.prenom}</td>
                  <td className="px-6 py-4 font-mono">{a.matricule}</td>

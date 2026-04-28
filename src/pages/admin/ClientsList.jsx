@@ -34,7 +34,7 @@ export default function ClientsListAdmin() {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {loading ? <tr><td colSpan="5" className="p-6 text-center">Chargement...</td></tr> : 
-             clients.map(c => (
+             (Array.isArray(clients) ? clients : []).map(c => (
                <tr key={c.id}>
                  <td className="px-6 py-4 font-bold text-slate-800">{c.nom}</td>
                  <td className="px-6 py-4">{c.prenom}</td>
