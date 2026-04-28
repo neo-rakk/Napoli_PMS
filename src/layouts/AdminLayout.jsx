@@ -20,6 +20,7 @@ export default function AdminLayout() {
     { name: 'Tarifs & Yield', path: '/admin/tarifs', icon: BadgeDollarSign },
     { name: 'Facturation & B2B', path: '/admin/facturation', icon: DollarSign },
     { name: 'Économat & Stocks', path: '/admin/stocks', icon: PackageSearch },
+    { name: 'Gestion POS', path: '/admin/pos', icon: Coffee },
     { name: 'Rapports & Analytics', path: '/admin/rapports', icon: TrendingUp },
     { name: 'Paramètres', path: '/admin/parametres', icon: Settings },
   ];

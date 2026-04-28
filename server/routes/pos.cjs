@@ -16,13 +16,41 @@ const { requireAuth } = require('../middleware/auth.cjs');
         actif INTEGER DEFAULT 1
       )
     `);
+
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS pos_tables (
+        id SERIAL PRIMARY KEY,
+        nom TEXT,
+        capacite INTEGER,
+        status TEXT DEFAULT 'libre' -- 'libre', 'reservee', 'occupee'
+      )
+    `);
+
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS pos_ingredients (
+        id SERIAL PRIMARY KEY,
+        nom TEXT,
+        stock_qty REAL DEFAULT 0
+      )
+    `);
+
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS pos_product_ingredients (
+        product_id INTEGER,
+        ingredient_id INTEGER,
+        quantite_requise REAL,
+        PRIMARY KEY (product_id, ingredient_id)
+      )
+    `);
     
     await db.query(`
       CREATE TABLE IF NOT EXISTS pos_orders (
         id SERIAL PRIMARY KEY, 
         agent_id INTEGER, 
-        methode_paiement TEXT, -- 'cash', 'tpe', 'chambre'
+        methode_paiement TEXT, 
         chambre_id INTEGER, 
+        table_id INTEGER,
+        reservation_id INTEGER,
         total REAL, 
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
@@ -72,6 +100,48 @@ router.get('/products', requireAuth, async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// Récupérer les tables
+router.get('/tables', requireAuth, async (req, res) => {
+  try {
+    const tables = await db.all("SELECT * FROM pos_tables ORDER BY nom");
+    res.json(tables);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Ajouter une table
+router.post('/tables', requireAuth, async (req, res) => {
+    try {
+        const { nom, capacite } = req.body;
+        await db.query(`INSERT INTO pos_tables (nom, capacite) VALUES ($1, $2)`, [nom, capacite]);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Récupérer les ingrédients
+router.get('/ingredients', requireAuth, async (req, res) => {
+    try {
+        const ingredients = await db.all("SELECT * FROM pos_ingredients ORDER BY nom");
+        res.json(ingredients);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Ajouter un ingrédient
+router.post('/ingredients', requireAuth, async (req, res) => {
+    try {
+        const { nom, stock_qty } = req.body;
+        await db.query(`INSERT INTO pos_ingredients (nom, stock_qty) VALUES ($1, $2)`, [nom, stock_qty]);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Enregistrer une commande (caisse)
