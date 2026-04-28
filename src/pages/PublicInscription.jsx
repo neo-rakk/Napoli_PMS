@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '../components/ui/Button';
 import { CheckCircle } from 'lucide-react';
+import CameraCapture from '../components/CameraCapture';
 
 export default function PublicInscription() {
   const [step, setStep] = useState(1);
@@ -18,6 +19,7 @@ export default function PublicInscription() {
   const [error, setError] = useState('');
   const [dossierInfo, setDossierInfo] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [cameraModal, setCameraModal] = useState({ isOpen: false, type: null, id: null, title: '' });
 
   const calculateAge = (dob) => {
     if (!dob) return 18;
@@ -244,7 +246,12 @@ export default function PublicInscription() {
                       </p>
                     </div>
                     <div className={`px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest cursor-pointer transition-colors shadow-sm ${formData[id] ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-slate-200 text-slate-600 hover:bg-slate-300'}`}
-                      onClick={() => setFormData({...formData, [id]: 'simulated-base64'})}>
+                      onClick={() => setCameraModal({
+                        isOpen: true,
+                        type: id === 'photo_selfie' ? 'user' : 'environment',
+                        id,
+                        title: id === 'photo_selfie' ? 'Prendre un Selfie' : id === 'photo_piece_recto' ? 'Scanner Pièce (Recto)' : 'Scanner Pièce (Verso)'
+                      })}>
                       {formData[id] ? 'Refaire' : 'Prendre'}
                     </div>
                   </div>
@@ -303,6 +310,17 @@ export default function PublicInscription() {
         <span className="text-white/40 text-[10px] font-black tracking-[0.5em] uppercase">Napoli PMS</span>
       </div>
 
+      <CameraCapture 
+        isOpen={cameraModal.isOpen}
+        cameraType={cameraModal.type}
+        title={cameraModal.title}
+        onClose={() => setCameraModal({ ...cameraModal, isOpen: false })}
+        onCapture={(dataUrl) => {
+          if (cameraModal.id) {
+            setFormData({ ...formData, [cameraModal.id]: dataUrl });
+          }
+        }}
+      />
     </div>
   );
 }
