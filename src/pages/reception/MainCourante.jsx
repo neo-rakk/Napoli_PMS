@@ -16,8 +16,8 @@ export default function MainCourante() {
            .then(r2 => r2.json())
            .then(data => {
              const journal = Array.isArray(data) ? data : [];
-             const cash = journal.filter(j => j.methode === 'cash').reduce((a, b) => a + parseFloat(b.montant), 0);
-             const tpe = journal.filter(j => j.methode === 'tpe').reduce((a, b) => a + parseFloat(b.montant), 0);
+             const cash = journal.filter(j => j.type_paiement === 'especes').reduce((a, b) => a + parseFloat(b.montant), 0);
+             const tpe = journal.filter(j => j.type_paiement === 'carte').reduce((a, b) => a + parseFloat(b.montant), 0);
              setData({ ...res, revenue_cash: cash, revenue_tpe: tpe, transactions: journal.length });
              setLoading(false);
            });

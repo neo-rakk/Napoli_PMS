@@ -70,7 +70,7 @@ router.post('/:id/mouvements', requireAuth, requireRole('admin', 'housekeeping',
       await client.query(`
         INSERT INTO stock_mouvements (article_id, agent_id, type_mouvement, quantite, reference)
         VALUES ($1, $2, $3, $4, $5)
-      `, [articleId, req.user.id, type_mouvement, qte, reference]);
+      `, [articleId, req.agent.id, type_mouvement, qte, reference]);
 
       const signe = type_mouvement === 'entree' ? '+' : '-';
       await client.query(`

@@ -60,8 +60,8 @@ router.get('/summary', requireAuth, async (req, res) => {
     const checkinsToday = await db.get("SELECT COUNT(*) as count FROM reservations WHERE statut = 'checkin' AND DATE(created_at) = CURRENT_DATE");
     const checkoutsToday = await db.get("SELECT COUNT(*) as count FROM reservations WHERE statut = 'checkout' AND DATE(date_depart) = CURRENT_DATE");
 
-    // Recettes du jour (Encaissements + POS)
-    const recettesJour = await db.get("SELECT SUM(montant) as total FROM transactions WHERE DATE(created_at) = CURRENT_DATE");
+    // Recettes du jour (Encaissements)
+    const recettesJour = await db.get("SELECT SUM(montant) as total FROM encaissements WHERE DATE(created_at) = CURRENT_DATE");
     const caisseDuJour = recettesJour && recettesJour.total ? parseFloat(recettesJour.total) : 0;
 
     res.json({
@@ -83,16 +83,16 @@ router.get('/analytics', requireAuth, async (req, res) => {
     const eol = await db.all(`
       SELECT DATE(created_at) as date, COUNT(*) as count 
       FROM reservations 
-      WHERE created_at >= date('now', '-7 days')
+      WHERE created_at >= CURRENT_DATE - INTERVAL '7 days'
       GROUP BY DATE(created_at)
       ORDER BY date ASC
     `);
 
     // Récupérer les données de revenus par mode de paiement
     const revModes = await db.all(`
-      SELECT mode, SUM(montant) as total 
-      FROM transactions 
-      GROUP BY mode
+      SELECT type_paiement as mode, SUM(montant) as total 
+      FROM encaissements 
+      GROUP BY type_paiement
     `);
 
     res.json({

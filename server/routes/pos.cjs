@@ -163,7 +163,7 @@ router.post('/orders', requireAuth, async (req, res) => {
     // 1. Créer la commande
     const orderRes = await db.query(
       `INSERT INTO pos_orders (agent_id, methode_paiement, chambre_id, total) VALUES ($1, $2, $3, $4) RETURNING id`,
-      [req.user.id, methode_paiement, chambre_id || null, total]
+      [req.agent.id, methode_paiement, chambre_id || null, total]
     );
 
     const orderId = orderRes[0]?.id || null; // For postgres notation, if SQLite, standard return id handling is needed
@@ -186,9 +186,9 @@ router.post('/orders', requireAuth, async (req, res) => {
     } else {
        // Create direct encaissement
        await db.query(`
-          INSERT INTO encaissements (type, reference_id, montant, methode, agent_id)
-          VALUES ('pos', $1, $2, $3, $4)
-       `, [finalOrderId, total, methode_paiement, req.user.id]);
+          INSERT INTO encaissements (agent_id, montant, type_paiement, formule, description)
+          VALUES ($1, $2, $3, $4, $5)
+       `, [req.agent.id, total, methode_paiement === 'cash' ? 'especes' : 'carte', 'N/A', `POS Order ${finalOrderId}`]);
     }
 
     res.json({ success: true, orderId: finalOrderId });
@@ -198,7 +198,7 @@ router.post('/orders', requireAuth, async (req, res) => {
       const { items, total, methode_paiement, chambre_id, reservation_id } = req.body;
       await db.run(
           `INSERT INTO pos_orders (agent_id, methode_paiement, chambre_id, total) VALUES ($1, $2, $3, $4)`,
-          [req.user.id, methode_paiement, chambre_id || null, total]
+          [req.agent.id, methode_paiement, chambre_id || null, total]
       );
       const lastOrder = await db.get(`SELECT id FROM pos_orders ORDER BY id DESC LIMIT 1`);
       for (const item of items) {
@@ -210,7 +210,7 @@ router.post('/orders', requireAuth, async (req, res) => {
       if (methode_paiement === 'chambre' && reservation_id) {
          await db.run(`UPDATE reservations SET total_extras = coalesce(total_extras,0) + $1 WHERE id = $2`, [total, reservation_id]);
       } else {
-         await db.run(`INSERT INTO encaissements (type, reference_id, montant, methode, agent_id) VALUES ('pos', $1, $2, $3, $4)`, [lastOrder.id, total, methode_paiement, req.user.id]);
+         await db.run(`INSERT INTO encaissements (agent_id, montant, type_paiement, formule, description) VALUES ($1, $2, $3, $4, $5)`, [req.agent.id, total, methode_paiement === 'cash' ? 'especes' : 'carte', 'N/A', `POS Order ${lastOrder.id}`]);
       }
       return res.json({ success: true, orderId: lastOrder.id });
     } catch(fallbackErr) {

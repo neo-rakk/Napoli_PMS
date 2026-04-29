@@ -46,7 +46,7 @@ router.post('/', requireAuth, async (req, res) => {
     await db.query(`
       INSERT INTO maintenance (chambre_id, localisation, type_panne, description, priorite, signale_par, photo_probleme) 
       VALUES ($1, $2, $3, $4, $5, $6, $7)
-    `, [chambre_id || null, localisation, type_panne, description, priorite, req.user.id, photo_probleme]);
+    `, [chambre_id || null, localisation, type_panne, description, priorite, req.agent.id, photo_probleme]);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -100,7 +100,7 @@ router.post('/:id/achats', requireAuth, async (req, res) => {
     await db.query(`
       INSERT INTO maintenance_pieces_demandees (maintenance_id, agent_id, designation, quantite, urgence)
       VALUES ($1, $2, $3, $4, $5)
-    `, [req.params.id, req.user.id, designation, quantite, urgence]);
+    `, [req.params.id, req.agent.id, designation, quantite, urgence]);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });

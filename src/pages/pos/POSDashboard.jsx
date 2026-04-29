@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { Button } from '../../components/ui/Button';
-import { ShoppingCart, User, CreditCard, Banknote, Trash2, Hotel } from 'lucide-react';
+import { ShoppingCart, User, CreditCard, Banknote, Trash2, Hotel, Coffee } from 'lucide-react';
 
 export default function POSDashboard() {
   const { token } = useAuthStore();

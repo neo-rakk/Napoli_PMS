@@ -51,7 +51,7 @@ router.post('/:id/bons-commande', requireAuth, requireRole('admin'), async (req,
     await db.query(`
       INSERT INTO bons_de_commande (grand_compte_id, reference_interne, montant_plafond, statut, created_by)
       VALUES ($1, $2, $3, $4, $5)
-    `, [req.params.id, reference_interne, montant_plafond || 0, statut || 'actif', req.user.id]);
+    `, [req.params.id, reference_interne, montant_plafond || 0, statut || 'actif', req.agent.id]);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -73,7 +73,7 @@ router.post('/:id/contrats', requireAuth, requireRole('admin'), async (req, res)
     await db.query(`
       INSERT INTO contrats (grand_compte_id, reference, date_debut, date_fin, remise_percent, actif, created_by)
       VALUES ($1, $2, $3, $4, $5, $6, $7)
-    `, [req.params.id, reference, date_debut, date_fin, remise_percent || 0, actif || 1, req.user.id]);
+    `, [req.params.id, reference, date_debut, date_fin, remise_percent || 0, actif || 1, req.agent.id]);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });

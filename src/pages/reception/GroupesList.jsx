@@ -41,8 +41,13 @@ export default function GroupesList() {
         setShowModal(false);
         setFormData({ nom: '', code: '', sport: '', pays: '', responsable_nom: '', responsable_contact: '', nb_membres_prevus: 0, formule_groupe: 'PC', date_arrivee: '', date_depart: '', notes: '' });
         fetchGroupes();
+      } else {
+        const err = await res.json();
+        alert('Erreur: ' + (err.error || 'Erreur inconnue'));
       }
-    } catch(e) {}
+    } catch(e) {
+      alert('Erreur de connexion');
+    }
   };
 
   return (

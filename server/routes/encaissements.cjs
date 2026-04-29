@@ -59,12 +59,12 @@ router.post('/pay', requireAuth, async (req, res) => {
     const ref = `REC-${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}-${Math.floor(Math.random()*10000)}`;
 
     const resDb = await db.run(`
-      INSERT INTO encaissements (reservation_id, agent_id, montant, methode, reference)
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING id, reference
-    `, [reservation_id, req.agent.id, montant, methode, ref]);
+      INSERT INTO encaissements (reservation_id, agent_id, montant, type_paiement, formule, description)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING id
+    `, [reservation_id, req.agent.id, montant, methode === 'cash' ? 'especes' : 'carte', 'N/A', ref]);
 
-    await logAction(req.agent.id, 'ENCAISSEMENT', 'encaissements', resDb.lastId, { montant, methode, ref }, req.ip);
+    await logAction(req.agent.id, 'ENCAISSEMENT', 'encaissements', resDb.lastId, { montant, type_paiement: methode, ref }, req.ip);
 
     res.json({ success: true, id: resDb.lastId, reference: ref });
   } catch(e) {
