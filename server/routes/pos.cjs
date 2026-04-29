@@ -102,6 +102,17 @@ router.get('/products', requireAuth, async (req, res) => {
   }
 });
 
+// Ajouter un produit
+router.post('/products', requireAuth, async (req, res) => {
+    try {
+        const { nom, categorie, prix } = req.body;
+        await db.query(`INSERT INTO pos_products (nom, categorie, prix) VALUES ($1, $2, $3)`, [nom, categorie, prix]);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Récupérer les tables
 router.get('/tables', requireAuth, async (req, res) => {
   try {
