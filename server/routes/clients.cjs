@@ -7,9 +7,13 @@ const { logAction } = require('../middleware/auditLogger.cjs');
 
 router.get('/', requireAuth, async (req, res) => {
   try {
-    const { statut, search } = req.query;
+    const { statut, search, id } = req.query;
     let query = "SELECT * FROM clients WHERE 1=1";
     let params = [];
+    if (id) {
+      params.push(id);
+      query += ` AND id = $${params.length}`;
+    }
     if (statut) {
       params.push(statut);
       query += ` AND statut = $${params.length}`;

@@ -47,14 +47,20 @@ export default function CheckIn() {
     if(!query) return;
     setSearching(true);
     let url = `/api/clients?statut=en_attente&search=${encodeURIComponent(query)}`;
+    
     if (query.startsWith('id:')) {
-        // Fallback for direct selection (ideally create an endpoint for it if needed, or rely on normal GET /api/clients)
-        // Just fetch all en_attente and filter if backend doesn't support id param (or I simply fetch it)
+      const idStr = query.split(':')[1];
+      url = `/api/clients?statut=en_attente&id=${idStr}`;
     }
+    
     try {
       const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
       const data = await res.json();
       setSearchResults(data);
+      // Auto-select if directed from PreInscriptionsList
+      if (query.startsWith('id:') && data.length === 1 && step === 1) {
+        selectClient(data[0]);
+      }
     } catch(e) { console.error(e); }
     finally { setSearching(false); }
   };

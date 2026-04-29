@@ -7,7 +7,7 @@ export default function AgentsList() {
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({ nom: '', prenom: '', role: 'reception' });
+  const [formData, setFormData] = useState({ nom: '', prenom: '', role: 'accueil' });
 
   const fetchAgents = async () => {
     setLoading(true);
@@ -44,7 +44,7 @@ export default function AgentsList() {
       if(res.ok) {
         alert(`Agent créé !\n\nMatricule: ${autoMatricule}\nPIN Temporaire: ${autoPin}\n\nVeuillez noter ces informations.`);
         setShowModal(false);
-        setFormData({ nom: '', prenom: '', role: 'reception' });
+        setFormData({ nom: '', prenom: '', role: 'accueil' });
         fetchAgents();
       } else {
         const errorData = await res.json();
@@ -84,13 +84,12 @@ export default function AgentsList() {
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Rôle</label>
                 <select className="w-full border-slate-300 rounded-md" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})}>
-                  <option value="reception">Réception</option>
-                  <option value="chef_reception">Chef de Réception</option>
+                  <option value="accueil">Réception / Accueil</option>
                   <option value="admin">Administrateur</option>
                   <option value="housekeeping">Gouvernance</option>
                   <option value="maintenance">Maintenance</option>
                   <option value="securite">Agents de sécurité</option>
-                  <option value="pos">Agent Caisse (POS)</option>
+                  <option value="caisse">Agent Caisse (POS)</option>
                 </select>
               </div>
               <div className="pt-4 flex justify-end gap-3">
