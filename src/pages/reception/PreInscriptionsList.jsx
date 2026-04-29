@@ -65,7 +65,7 @@ export default function PreInscriptionsList() {
                 <td colSpan="6" className="px-6 py-8 text-center text-slate-500">Aucune pré-inscription en attente.</td>
               </tr>
             )}
-            {clients.map(client => (
+            {Array.isArray(clients) && clients.map(client => (
               <tr key={client.id} className="hover:bg-slate-50">
                 <td className="px-6 py-4 font-mono font-medium text-emerald-700">
                   NAPOLI-2026-{String(client.id).padStart(5, '0')}

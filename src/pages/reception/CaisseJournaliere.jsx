@@ -20,7 +20,7 @@ export default function CaisseJournaliere() {
     fetchEncaissements();
   }, [token]);
 
-  const stats = encaissements.reduce((acc, curr) => {
+  const stats = (Array.isArray(encaissements) ? encaissements : []).reduce((acc, curr) => {
      acc.total += parseFloat(curr.montant);
      acc[curr.methode] = (acc[curr.methode] || 0) + parseFloat(curr.montant);
      return acc;
@@ -63,7 +63,7 @@ export default function CaisseJournaliere() {
             <tbody className="divide-y divide-slate-100">
               {loading && <tr><td colSpan="6" className="p-6 text-center">Chargement...</td></tr>}
               {!loading && encaissements.length === 0 && <tr><td colSpan="6" className="p-6 text-center">Aucun encaissement.</td></tr>}
-              {encaissements.map(e => (
+              {Array.isArray(encaissements) && encaissements.map(e => (
                  <tr key={e.id} className="hover:bg-slate-50">
                     <td className="px-6 py-4 font-mono">{new Date(e.created_at).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'})}</td>
                     <td className="px-6 py-4 font-bold text-slate-700">{e.reference}</td>

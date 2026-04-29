@@ -88,7 +88,7 @@ export default function MaintenanceReception() {
                  <label className="block text-sm font-medium text-slate-700 mb-1">Localisation (Lieu exact ou Chambre)</label>
                  <select className="w-full border-slate-300 rounded-md mb-2" value={newForm.chambre_id || ''} onChange={e => setNewForm({...newForm, chambre_id: e.target.value, localisation: e.target.value ? '' : newForm.localisation})}>
                    <option value="">-- Autre (Lobby, Couloir, etc.) --</option>
-                   {chambres.map(c => <option key={c.id} value={c.id}>Chambre {c.numero} (Bloc {c.bloc_nom})</option>)}
+                   {Array.isArray(chambres) && chambres.map(c => <option key={c.id} value={c.id}>Chambre {c.numero} (Bloc {c.bloc_nom})</option>)}
                  </select>
                  {!newForm.chambre_id && (
                    <input required type="text" placeholder="Ex: Réception Principale, Ascenseur Bloc A" className="w-full border-slate-300 rounded-md" value={newForm.localisation} onChange={e => setNewForm({...newForm, localisation: e.target.value})} />
@@ -144,7 +144,7 @@ export default function MaintenanceReception() {
           <tbody className="divide-y divide-slate-100">
             {loading && <tr><td colSpan="5" className="p-6 text-center">Chargement...</td></tr>}
             {!loading && taches.length === 0 && <tr><td colSpan="5" className="p-6 text-center">Aucune panne signalée.</td></tr>}
-            {taches.map(t => (
+            {Array.isArray(taches) && taches.map(t => (
                <tr key={t.id} className="hover:bg-slate-50">
                  <td className="px-6 py-4">
                     <span className={`px-2 py-1 text-xs font-bold uppercase rounded block w-max mb-1 ${t.priorite === 'urgente' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-600'}`}>{t.priorite}</span>
@@ -176,7 +176,7 @@ export default function MaintenanceReception() {
                          onChange={(e) => handleAssign(e, t.id)}
                        >
                          <option value="">-- Non Assigné --</option>
-                         {agents.map(a => <option key={a.id} value={a.id}>{a.prenom} {a.nom}</option>)}
+                         {Array.isArray(agents) && agents.map(a => <option key={a.id} value={a.id}>{a.prenom} {a.nom}</option>)}
                        </select>
                     )}
                  </td>
