@@ -89,7 +89,7 @@ export default function AdminTarifs() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {data.tarifs?.map(t => (
+                  {Array.isArray(data.tarifs) && data.tarifs.map(t => (
                     <tr key={t.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="font-bold text-slate-800">{t.nom}</div>
@@ -116,7 +116,7 @@ export default function AdminTarifs() {
               {!loading && data.saisons?.length === 0 && <p className="text-center text-slate-500">Aucune saison configurée (Base 1.0 appliquée).</p>}
               
               <div className="space-y-4">
-                 {data.saisons?.map(s => (
+                 {Array.isArray(data.saisons) && data.saisons.map(s => (
                     <div key={s.id} className="border border-slate-200 rounded-xl p-4 flex justify-between items-center hover:border-emerald-300 transition-colors">
                        <div>
                           <div className="font-bold text-slate-800 text-base">{s.nom}</div>

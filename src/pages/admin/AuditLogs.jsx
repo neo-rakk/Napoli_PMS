@@ -40,7 +40,7 @@ export default function AuditLogs() {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {loading && <tr><td colSpan="5" className="p-6 text-center">Chargement...</td></tr>}
-            {!loading && logs.map(l => (
+            {!loading && Array.isArray(logs) && logs.map(l => (
               <tr key={l.id}>
                 <td className="px-6 py-4 whitespace-nowrap">{new Date(l.created_at).toLocaleString('fr-FR')}</td>
                 <td className="px-6 py-4 font-medium">{l.agent_nom} {l.agent_prenom}</td>

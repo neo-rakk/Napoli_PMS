@@ -15,7 +15,7 @@ export default function ChambresPlan() {
     try {
       const res = await fetch('/api/chambres', { headers: { 'Authorization': `Bearer ${token}` } });
       const data = await res.json();
-      setChambres(data);
+      setChambres(Array.isArray(data) ? data : []);
     } catch(e) { console.error(e); }
     finally { setLoading(false); }
   };

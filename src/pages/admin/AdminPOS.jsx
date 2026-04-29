@@ -66,7 +66,7 @@ export default function AdminPOS() {
                 <input placeholder="Cap." className="border p-2 rounded w-20" value={newTable.capacite} onChange={e => setNewTable({...newTable, capacite: e.target.value})} />
                 <button className="bg-emerald-600 text-white p-2 rounded" onClick={addTable}><Plus /></button>
             </div>
-            {tables.map(t => <div key={t.id} className="border-b py-2 flex justify-between"> {t.nom} ({t.capacite} pers)</div>)}
+            {Array.isArray(tables) && tables.map(t => <div key={t.id} className="border-b py-2 flex justify-between"> {t.nom} ({t.capacite} pers)</div>)}
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
@@ -76,7 +76,7 @@ export default function AdminPOS() {
                 <input placeholder="Stock" className="border p-2 rounded w-20" value={newIngredient.stock_qty} onChange={e => setNewIngredient({...newIngredient, stock_qty: e.target.value})} />
                 <button className="bg-emerald-600 text-white p-2 rounded" onClick={addIngredient}><Plus /></button>
             </div>
-            {ingredients.map(i => <div key={i.id} className="border-b py-2 flex justify-between"> {i.nom} ({i.stock_qty})</div>)}
+            {Array.isArray(ingredients) && ingredients.map(i => <div key={i.id} className="border-b py-2 flex justify-between"> {i.nom} ({i.stock_qty})</div>)}
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 md:col-span-2 lg:col-span-1">
@@ -87,7 +87,7 @@ export default function AdminPOS() {
                 <input placeholder="Prix" className="border p-2 rounded w-full" value={newProduct.prix} onChange={e => setNewProduct({...newProduct, prix: e.target.value})} />
                 <button className="bg-emerald-600 text-white p-2 rounded w-full" onClick={addProduct}><Plus /> Ajouter Produit</button>
             </div>
-            {products.map(p => <div key={p.id} className="border-b py-2 flex justify-between"> {p.nom} ({p.categorie}) - {p.prix} DZD</div>)}
+            {Array.isArray(products) && products.map(p => <div key={p.id} className="border-b py-2 flex justify-between"> {p.nom} ({p.categorie}) - {p.prix} DZD</div>)}
         </div>
       </div>
     </div>

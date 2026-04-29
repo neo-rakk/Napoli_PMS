@@ -19,7 +19,7 @@ export default function SecurityDashboard() {
       });
       const data = await res.json();
       
-      const inHouse = data.filter(c => c.statut === 'enregistre');
+      const inHouse = Array.isArray(data) ? data.filter(c => c.statut === 'enregistre') : [];
       
       if(inHouse.length > 0) {
         setResult({ success: true, client: inHouse[0] });

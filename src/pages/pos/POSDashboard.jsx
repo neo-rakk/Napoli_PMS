@@ -17,12 +17,12 @@ export default function POSDashboard() {
   useEffect(() => {
     fetch('/api/pos/products', { headers: { 'Authorization': `Bearer ${token}` } })
       .then(r => r.json())
-      .then(setProducts)
+      .then(data => setProducts(Array.isArray(data) ? data : []))
       .catch(console.error);
 
     fetch('/api/reservations', { headers: { 'Authorization': `Bearer ${token}` } })
        .then(r => r.json())
-       .then(data => setInHouseClients(data.filter(c => c.statut === 'checkin')))
+       .then(data => setInHouseClients(Array.isArray(data) ? data.filter(c => c.statut === 'checkin') : []))
        .catch(console.error);
   }, [token]);
 

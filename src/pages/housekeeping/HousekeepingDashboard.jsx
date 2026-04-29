@@ -12,7 +12,7 @@ export default function HousekeepingDashboard() {
     try {
       const res = await fetch('/api/chambres', { headers: { 'Authorization': `Bearer ${token}` } });
       const data = await res.json();
-      setChambres(data.filter(c => ['sale', 'en_nettoyage'].includes(c.statut)));
+      setChambres(Array.isArray(data) ? data.filter(c => ['sale', 'en_nettoyage'].includes(c.statut)) : []);
     } catch(e) { console.error(e); }
     finally { setLoading(false); }
   };

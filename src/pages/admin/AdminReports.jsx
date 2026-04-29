@@ -26,10 +26,10 @@ export default function AdminReports() {
 
   if (loading) return <div className="p-8 text-center text-slate-500 font-bold">Chargement des rapports...</div>;
 
-  const revData = analytics?.revenus_modes?.map(r => ({
+  const revData = Array.isArray(analytics?.revenus_modes) ? analytics.revenus_modes.map(r => ({
     name: r.mode.toUpperCase(),
     value: parseFloat(r.total)
-  })) || [];
+  })) : [];
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8">

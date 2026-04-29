@@ -22,7 +22,7 @@ export default function MaintenanceDashboard() {
       const res = await fetch('/api/maintenance', { headers: { 'Authorization': `Bearer ${token}` } });
       const data = await res.json();
       // Only show tasks assigned to this tech, or unassigned (signale)
-      const myTasks = data.filter(t => t.assigne_a === user.id || t.statut === 'signale');
+      const myTasks = Array.isArray(data) ? data.filter(t => t.assigne_a === user.id || t.statut === 'signale') : [];
       setTaches(myTasks);
     } catch(e) { console.error(e); }
     finally { setLoading(false); }
