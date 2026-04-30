@@ -37,7 +37,7 @@ export default function AdminLogin() {
         const verifyRes = await fetch('/api/agents/auth/supabase-admin', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ access_token: data.session.access_token })
+          body: JSON.stringify({ email: data.user.email })
         });
         
         const contentType = verifyRes.headers.get('content-type');

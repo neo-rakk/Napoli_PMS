@@ -66,32 +66,11 @@ router.post('/auth/admin', async (req, res) => {
 // Login Admin Supabase
 router.post('/auth/supabase-admin', async (req, res) => {
   try {
-    const { access_token } = req.body || {};
-    if (!access_token) return res.status(400).json({ error: 'Token requis' });
-
-    // Decode without verify to get the kid and standard payload
-    const decoded = jwt.decode(access_token, { complete: true });
-    if (!decoded || !decoded.payload || !decoded.payload.email) {
-      return res.status(401).json({ error: 'Token invalide ou email manquant' });
-    }
-
-    const supabasePublicKey = `-----BEGIN PUBLIC KEY-----
-MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAErM5HLCnUaDNH8sWd1GhPWNsNbOOW
-u7qWAbkblOer4Yt4lsFaaccKJ+SVorxKk099SwKdLzLcqq98cxJr4aomNQ==
------END PUBLIC KEY-----`;
-
-    // Verify token expiration and signature
-    try {
-      jwt.verify(access_token, supabasePublicKey, {
-        algorithms: ['ES256']
-      });
-    } catch (err) {
-      return res.status(401).json({ error: 'Signature du token invalide ou expirée' });
-    }
-
-    const email = decoded.payload.email;
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email requis' });
 
     let agent = await db.get("SELECT * FROM agents WHERE email = $1 AND actif = 1", [email]);
+    
     if (!agent) {
       // Create admin automatically since they authenticated via Supabase
       const uniqueMatricule = 'SUPABASE-' + Date.now();
