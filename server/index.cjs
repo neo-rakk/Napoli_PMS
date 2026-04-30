@@ -32,12 +32,7 @@ const allowedOrigins = [
 ].filter(Boolean);
 
 app.use(cors({
-  origin: (origin, callback) => {
-    // Autoriser les requêtes sans origine (Postman, serveur→serveur)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-    return callback(new Error(`Origine non autorisée par CORS: ${origin}`));
-  },
+  origin: true, // Autorise de façon dynamique toutes les requêtes (nécessaire pour environnement dev cloud)
   credentials: true
 }));
 

@@ -65,10 +65,28 @@ router.post('/auth/admin', async (req, res) => {
 
 // Login Admin Supabase
 router.post('/auth/supabase-admin', async (req, res) => {
-  const { email } = req.body;
-  if (!email) return res.status(400).json({ error: 'Email requis' });
+  const { access_token } = req.body;
+  if (!access_token) return res.status(400).json({ error: 'Token requis' });
 
   try {
+    const { createClient } = require('@supabase/supabase-js');
+    const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://ssivshopfawxrnyxvnnl.supabase.co';
+    const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
+    
+    if (!supabaseKey) {
+      return res.status(500).json({ error: 'Configuration Supabase backend manquante' });
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    const { data: { user }, error } = await supabase.auth.getUser(access_token);
+    
+    if (error || !user) {
+      console.error("Supabase Auth Error:", error);
+      return res.status(401).json({ error: 'Token Supabase invalide' });
+    }
+
+    const email = user.email;
+
     let agent = await db.get("SELECT * FROM agents WHERE email = $1 AND actif = 1", [email]);
     if (!agent) {
       // Create admin automatically since they authenticated via Supabase
