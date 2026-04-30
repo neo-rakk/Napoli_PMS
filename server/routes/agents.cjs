@@ -69,23 +69,43 @@ router.post('/auth/supabase-admin', async (req, res) => {
   if (!access_token) return res.status(400).json({ error: 'Token requis' });
 
   try {
-    const { createClient } = require('@supabase/supabase-js');
+    // Decode without verify to get the kid and standard payload
+    const decoded = jwt.decode(access_token, { complete: true });
+    if (!decoded || !decoded.payload || !decoded.payload.email) {
+      return res.status(401).json({ error: 'Token invalide ou email manquant' });
+    }
+
+    // Récupérer dynamiquement les clés publiques Supabase
     const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://ssivshopfawxrnyxvnnl.supabase.co';
-    const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
+    const jwksUrl = `${supabaseUrl}/auth/v1/.well-known/jwks.json`;
     
-    if (!supabaseKey) {
-      return res.status(500).json({ error: 'Configuration Supabase backend manquante' });
+    let jwks;
+    try {
+      const response = await fetch(jwksUrl);
+      jwks = await response.json();
+    } catch (e) {
+      console.error("Erreur de récupération des clés publiques:", e);
+      return res.status(500).json({ error: 'Impossible de vérifier la signature du token (erreur JWKS)' });
     }
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
-    const { data: { user }, error } = await supabase.auth.getUser(access_token);
-    
-    if (error || !user) {
-      console.error("Supabase Auth Error:", error);
-      return res.status(401).json({ error: 'Token Supabase invalide' });
+    const keyConfig = jwks.keys.find(k => k.kid === decoded.header.kid) || jwks.keys[0];
+    if (!keyConfig) {
+      return res.status(401).json({ error: 'Clé publique locale introuvable' });
     }
 
-    const email = user.email;
+    const crypto = require('crypto');
+    const publicKey = crypto.createPublicKey({ key: keyConfig, format: 'jwk' });
+
+    // Verify token expiration and signature
+    try {
+      jwt.verify(access_token, publicKey.export({ type: 'spki', format: 'pem' }), {
+        algorithms: [keyConfig.alg || 'ES256']
+      });
+    } catch (err) {
+      return res.status(401).json({ error: 'Signature du token invalide ou expirée' });
+    }
+
+    const email = decoded.payload.email;
 
     let agent = await db.get("SELECT * FROM agents WHERE email = $1 AND actif = 1", [email]);
     if (!agent) {
@@ -94,20 +114,21 @@ router.post('/auth/supabase-admin', async (req, res) => {
       const insertRes = await db.run(`
         INSERT INTO agents (nom, prenom, email, matricule, role, pin_hash, actif)
         VALUES ('Admin', 'Supabase', $1, $2, 'admin', 'supabase', 1)
-        RETURNING *
+        RETURNING id
       `, [email, uniqueMatricule]);
       agent = await db.get("SELECT * FROM agents WHERE id = $1", [insertRes.lastId]);
     } else if (agent.role !== 'admin') {
-      // Ensure they have admin role if they use this endpoint? Or just proceed with their role
-      await db.query("UPDATE agents SET role = 'admin' WHERE id = $1", [agent.id]);
+      // Ensure they have admin role
+      await db.run("UPDATE agents SET role = 'admin' WHERE id = $1", [agent.id]);
       agent.role = 'admin';
     }
 
-    await db.query("UPDATE agents SET derniere_connexion = NOW() WHERE id = $1", [agent.id]);
+    await db.run("UPDATE agents SET derniere_connexion = NOW() WHERE id = $1", [agent.id]);
 
     const token = jwt.sign({ id: agent.id, role: agent.role }, JWT_SECRET, { expiresIn: '8h' });
     res.json({ token, agent: { id: agent.id, nom: agent.nom, prenom: agent.prenom, role: agent.role, email: agent.email } });
   } catch (err) {
+    console.error("Supabase Admin Login Error:", err);
     res.status(500).json({ error: err.message });
   }
 });
