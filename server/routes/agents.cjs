@@ -65,41 +65,25 @@ router.post('/auth/admin', async (req, res) => {
 
 // Login Admin Supabase
 router.post('/auth/supabase-admin', async (req, res) => {
-  const { access_token } = req.body;
-  if (!access_token) return res.status(400).json({ error: 'Token requis' });
-
   try {
+    const { access_token } = req.body || {};
+    if (!access_token) return res.status(400).json({ error: 'Token requis' });
+
     // Decode without verify to get the kid and standard payload
     const decoded = jwt.decode(access_token, { complete: true });
     if (!decoded || !decoded.payload || !decoded.payload.email) {
       return res.status(401).json({ error: 'Token invalide ou email manquant' });
     }
 
-    // Récupérer dynamiquement les clés publiques Supabase
-    const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://ssivshopfawxrnyxvnnl.supabase.co';
-    const jwksUrl = `${supabaseUrl}/auth/v1/.well-known/jwks.json`;
-    
-    let jwks;
-    try {
-      const response = await fetch(jwksUrl);
-      jwks = await response.json();
-    } catch (e) {
-      console.error("Erreur de récupération des clés publiques:", e);
-      return res.status(500).json({ error: 'Impossible de vérifier la signature du token (erreur JWKS)' });
-    }
-
-    const keyConfig = jwks.keys.find(k => k.kid === decoded.header.kid) || jwks.keys[0];
-    if (!keyConfig) {
-      return res.status(401).json({ error: 'Clé publique locale introuvable' });
-    }
-
-    const crypto = require('crypto');
-    const publicKey = crypto.createPublicKey({ key: keyConfig, format: 'jwk' });
+    const supabasePublicKey = `-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAErM5HLCnUaDNH8sWd1GhPWNsNbOOW
+u7qWAbkblOer4Yt4lsFaaccKJ+SVorxKk099SwKdLzLcqq98cxJr4aomNQ==
+-----END PUBLIC KEY-----`;
 
     // Verify token expiration and signature
     try {
-      jwt.verify(access_token, publicKey.export({ type: 'spki', format: 'pem' }), {
-        algorithms: [keyConfig.alg || 'ES256']
+      jwt.verify(access_token, supabasePublicKey, {
+        algorithms: ['ES256']
       });
     } catch (err) {
       return res.status(401).json({ error: 'Signature du token invalide ou expirée' });
