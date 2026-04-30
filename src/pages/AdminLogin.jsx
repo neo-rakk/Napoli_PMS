@@ -42,7 +42,8 @@ export default function AdminLogin() {
         
         const contentType = verifyRes.headers.get('content-type');
         if (!contentType || !contentType.includes('application/json')) {
-           throw new Error('Le serveur a renvoyé une réponse invalide (HTML). Erreur de base de données probable.');
+           const text = await verifyRes.text();
+           throw new Error(`Réponse invalide HTTP ${verifyRes.status}. ${text.substring(0, 100)}`);
         }
 
         const backendData = await verifyRes.json();
