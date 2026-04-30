@@ -6,15 +6,15 @@ const jwt = require('jsonwebtoken');
 const db = require('../db/database.cjs');
 const { requireAuth, requireRole } = require('../middleware/auth.cjs');
 
-const JWT_SECRET = process.env.JWT_SECRET || process.env.SUPABASE_JWT_SECRET || 'votre-secret-local-dev';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) throw new Error('[FATAL] JWT_SECRET manquant');
 
 // Liste des agents (public pour le login PIN, filtré pour admin)
 router.get('/', async (req, res) => {
   try {
-    const agents = await db.all("SELECT id, nom, prenom, role, ('AGT-' || LPAD(id::text, 3, '0')) as code FROM agents WHERE actif = 1");
-    // Ne pas exposer les noms publiquement, juste l'ID et Code si non authentifié ?
-    // Le CDC dit : La liste n'affiche QUE les codes AGT-XXX (PAS de noms)
-    res.json(agents.map(a => ({ id: a.id, code: a.code, role: a.role })));
+    const agents = await db.all("SELECT id, ('AGT-' || LPAD(id::text, 3, '0')) as code FROM agents WHERE actif = 1 ORDER BY id");
+    // Ne retourner QUE id et code — pas de rôle, pas de nom
+    res.json(agents.map(a => ({ id: a.id, code: a.code })));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

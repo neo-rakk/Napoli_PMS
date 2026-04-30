@@ -5,8 +5,9 @@ import { Button } from '../../components/ui/Button';
 export default function AdminHebergement() {
   const { token } = useAuthStore();
   const [chambres, setChambres] = useState([]);
+  const [blocs, setBlocs] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({ numero: '', bloc_nom: '', etage: '', type: 'single', capacite_max: 1 });
+  const [formData, setFormData] = useState({ numero: '', bloc_id: '', etage: '', type: 'Single', capacite_max: 1 });
   
   const fetchChambres = () => {
     fetch('/api/chambres', { headers: { 'Authorization': `Bearer ${token}` } })
@@ -17,6 +18,8 @@ export default function AdminHebergement() {
 
   useEffect(() => {
     fetchChambres();
+    fetch('/api/blocs', { headers: { 'Authorization': `Bearer ${token}` } })
+      .then(r => r.json()).then(setBlocs).catch(console.error);
   }, [token]);
 
   const handleCreate = async (e) => {
@@ -30,7 +33,7 @@ export default function AdminHebergement() {
       if(res.ok) {
         setShowModal(false);
         fetchChambres();
-        setFormData({ numero: '', bloc_nom: '', etage: '', type: 'single', capacite_max: 1 });
+        setFormData({ numero: '', bloc_id: '', etage: '', type: 'Single', capacite_max: 1 });
       }
     } catch(e) { console.error(e); }
   };
@@ -56,8 +59,12 @@ export default function AdminHebergement() {
                   <input required type="text" className="w-full border-slate-300 rounded-md" value={formData.numero} onChange={e => setFormData({...formData, numero: e.target.value})} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Bloc / Bâtiment</label>
-                  <input required type="text" className="w-full border-slate-300 rounded-md" value={formData.bloc_nom} onChange={e => setFormData({...formData, bloc_nom: e.target.value})} />
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Bloc</label>
+                  <select required className="w-full border-slate-300 rounded-md" 
+                    value={formData.bloc_id} onChange={e => setFormData({...formData, bloc_id: e.target.value})}>
+                    <option value="">Sélectionner un bloc</option>
+                    {blocs.map(b => <option key={b.id} value={b.id}>{b.nom} ({b.code})</option>)}
+                  </select>
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-4">
@@ -68,9 +75,11 @@ export default function AdminHebergement() {
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Type</label>
                   <select className="w-full border-slate-300 rounded-md" value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})}>
-                    <option value="single">Single</option>
-                    <option value="double">Double</option>
-                    <option value="suite">Suite</option>
+                    <option value="Single">Single</option>
+                    <option value="Twin">Twin</option>
+                    <option value="Triple">Triple</option>
+                    <option value="Quad">Quad</option>
+                    <option value="Suite">Suite</option>
                   </select>
                 </div>
                 <div>

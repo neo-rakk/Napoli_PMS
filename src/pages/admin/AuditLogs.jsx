@@ -45,9 +45,11 @@ export default function AuditLogs() {
                 <td className="px-6 py-4 whitespace-nowrap">{new Date(l.created_at).toLocaleString('fr-FR')}</td>
                 <td className="px-6 py-4 font-medium">{l.agent_nom} {l.agent_prenom}</td>
                 <td className="px-6 py-4">
-                  <span className="px-2 py-1 bg-slate-100 rounded text-xs font-bold">{l.action_type}</span>
+                  <span className="px-2 py-1 bg-slate-100 rounded text-xs font-bold">{l.action}</span>
                 </td>
-                <td className="px-6 py-4 font-mono text-xs">{l.entity_type} {l.entity_id ? `(#${l.entity_id})` : ''}</td>
+                <td className="px-6 py-4 font-mono text-xs">
+                  {l.table_cible} {l.enregistrement_id ? `(#${l.enregistrement_id})` : ''}
+                </td>
                 <td className="px-6 py-4 text-xs font-mono">{l.details ? JSON.stringify(l.details) : '-'}</td>
               </tr>
             ))}

@@ -8,7 +8,8 @@ const rateLimit = require('express-rate-limit');
 const path = require('path');
 const fs = require('fs');
 
-const JWT_SECRET = process.env.JWT_SECRET || process.env.SUPABASE_JWT_SECRET || 'votre-secret-local-dev';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) throw new Error('[FATAL] JWT_SECRET manquant');
 
 const app = express();
 
@@ -24,10 +25,18 @@ app.use(helmet({
   }
 }));
 
-const allowedOrigins = [process.env.FRONTEND_URL, 'http://localhost:3000'].filter(Boolean);
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  'http://localhost:3000',
+  'http://localhost:5173',
+].filter(Boolean);
+
 app.use(cors({
   origin: (origin, callback) => {
-    callback(null, true);
+    // Autoriser les requêtes sans origine (Postman, serveur→serveur)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error(`Origine non autorisée par CORS: ${origin}`));
   },
   credentials: true
 }));
@@ -54,6 +63,11 @@ app.use('/api/comptes', require('./routes/comptes.cjs'));
 app.use('/api/tarifs', require('./routes/tarifs.cjs'));
 app.use('/api/contrats', require('./routes/contrats.cjs'));
 app.use('/api/reservations', require('./routes/reservations.cjs'));
+app.use('/api/blocs', require('./routes/blocs.cjs'));
+app.use('/api/housekeeping', require('./routes/housekeeping.cjs'));
+app.use('/api/sessions-caisse', require('./routes/sessionsCaisse.cjs'));
+app.use('/api/presences', require('./routes/presences.cjs'));
+app.use('/api/audit', require('./routes/audit.cjs'));
 app.use('/api/encaissements', require('./routes/encaissements.cjs'));
 app.use('/api/maintenance', require('./routes/maintenance.cjs'));
 app.use('/api/pos', require('./routes/pos.cjs'));

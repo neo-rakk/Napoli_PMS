@@ -15,8 +15,6 @@ async function setup() {
     return;
   }
   
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-
   let cleanConnectionString = connectionString;
   try {
     const url = require('url');

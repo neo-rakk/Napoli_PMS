@@ -108,7 +108,7 @@ router.get('/audit', requireAuth, async (req, res) => {
   try {
     const logs = await db.all(`
       SELECT al.*, a.nom as agent_nom, a.prenom as agent_prenom
-      FROM audit_logs al
+      FROM audit_log al
       LEFT JOIN agents a ON al.agent_id = a.id
       ORDER BY al.created_at DESC
       LIMIT 200

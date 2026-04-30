@@ -12,9 +12,7 @@ if (connectionString && (!connectionString.startsWith('postgres://') && !connect
   console.warn('[DB] Attention : L\'URL de la base de données ne commence pas par postgres://. Veuillez vérifier vos secrets.');
 }
 
-if (connectionString) {
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-}
+
 
 let cleanConnectionString = connectionString;
 if (connectionString) {

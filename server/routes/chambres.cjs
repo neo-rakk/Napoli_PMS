@@ -60,15 +60,21 @@ router.post('/:id/statut', requireAuth, async (req, res) => {
 
 router.post('/', requireAuth, requireRole('admin'), async (req, res) => {
   try {
-    const { numero, bloc_nom, etage, type, capacite_max } = req.body;
-    await db.query(
-      "INSERT INTO chambres (numero, bloc_nom, etage, type, capacite_max) VALUES ($1, $2, $3, $4, $5)",
-      [numero, bloc_nom, etage, type, capacite_max]
+    const { numero, bloc_id, etage, type, capacite_max } = req.body;
+    if (!numero || !bloc_id || !etage || !type) {
+      return res.status(400).json({ error: 'numero, bloc_id, etage et type sont obligatoires' });
+    }
+    const bloc = await db.get("SELECT * FROM blocs WHERE id = $1", [bloc_id]);
+    if (!bloc) return res.status(404).json({ error: 'Bloc introuvable' });
+
+    await db.run(
+      "INSERT INTO chambres (numero, bloc, bloc_id, etage, type, capacite_max, statut) VALUES ($1, $2, $3, $4, $5, $6, 'libre')",
+      [numero, bloc.code, bloc_id, etage, type, capacite_max || 1]
     );
-    res.json({success: true});
-  } catch(e) {
-    res.status(500).json({error: e.message});
-  }
+    const { logAction } = require('../middleware/auditLogger.cjs');
+    await logAction(req.agent.id, 'CREATION_CHAMBRE', 'chambres', null, { numero, bloc_id, type });
+    res.status(201).json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 module.exports = router;

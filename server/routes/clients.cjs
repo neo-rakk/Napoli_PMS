@@ -5,24 +5,68 @@ const db = require('../db/database.cjs');
 const { requireAuth, requireRole } = require('../middleware/auth.cjs');
 const { logAction } = require('../middleware/auditLogger.cjs');
 
+// GET /api/clients/check-nin/:nin — vérifier doublon NIN
+router.get('/check-nin/:nin', async (req, res) => {
+  try {
+    const client = await db.get("SELECT id FROM clients WHERE nin = $1", [req.params.nin]);
+    res.json({ exists: !!client });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// GET /api/clients/check-piece/:num — vérifier doublon pièce étrangère
+router.get('/check-piece/:num', async (req, res) => {
+  try {
+    const client = await db.get("SELECT id FROM clients WHERE num_piece = $1", [req.params.num]);
+    res.json({ exists: !!client });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// GET /api/clients/mineurs — liste clients mineurs
+router.get('/mineurs', requireAuth, async (req, res) => {
+  try {
+    const mineurs = await db.all("SELECT * FROM clients WHERE est_mineur = 1 ORDER BY nom");
+    res.json(mineurs);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// GET /api/clients/:id — détail client
+router.get('/:id', requireAuth, async (req, res) => {
+  try {
+    const client = await db.get("SELECT * FROM clients WHERE id = $1", [req.params.id]);
+    if (!client) return res.status(404).json({ error: 'Client introuvable' });
+    res.json(client);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// PUT /api/clients/:id — modifier client
+router.put('/:id', requireAuth, requireRole('admin', 'accueil'), async (req, res) => {
+  try {
+    const { nom, prenom, date_naissance, lieu_naissance, adresse_residence, sexe, groupe_sanguin, formule, tuteur_nom, tuteur_contact } = req.body;
+    await db.run(`
+      UPDATE clients SET nom=$1, prenom=$2, date_naissance=$3, lieu_naissance=$4,
+        adresse_residence=$5, sexe=$6, groupe_sanguin=$7, formule=$8, tuteur_nom=$9, tuteur_contact=$10
+      WHERE id=$11
+    `, [nom, prenom, date_naissance, lieu_naissance, adresse_residence, sexe, groupe_sanguin, formule, tuteur_nom, tuteur_contact, req.params.id]);
+    await logAction(req.agent.id, 'MODIFICATION_CLIENT', 'clients', req.params.id, req.body, req.ip);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 router.get('/', requireAuth, async (req, res) => {
   try {
-    const { statut, search, id } = req.query;
+    const { statut, search, id, groupe_id } = req.query;
     let query = "SELECT * FROM clients WHERE 1=1";
-    let params = [];
-    if (id) {
-      params.push(id);
-      query += ` AND id = $${params.length}`;
-    }
-    if (statut) {
-      params.push(statut);
-      query += ` AND statut = $${params.length}`;
-    }
+    const params = [];
+
+    if (id) { params.push(id); query += ` AND id = $${params.length}`; }
+    if (statut) { params.push(statut); query += ` AND statut = $${params.length}`; }
+    if (groupe_id) { params.push(groupe_id); query += ` AND groupe_id = $${params.length}`; }
     if (search) {
-      params.push(`%${search}%`);
-      query += ` AND (nom ILIKE $${params.length} OR prenom ILIKE $${params.length} OR nin ILIKE $${params.length} OR num_piece ILIKE $${params.length})`;
+      const idx = params.push(`%${search}%`);
+      query += ` AND (nom ILIKE $${idx} OR prenom ILIKE $${idx} OR nin ILIKE $${idx} OR num_piece ILIKE $${idx})`;
     }
-    query += " ORDER BY created_at DESC";
+
+    query += " ORDER BY created_at DESC LIMIT 200";
     const clients = await db.all(query, params);
     res.json(clients);
   } catch (err) {
@@ -35,15 +79,31 @@ router.post('/', async (req, res) => {
     const data = req.body;
     let authAgentId = null;
     if (req.headers.authorization) {
-      // Optional check if authenticated
       const jwt = require('jsonwebtoken');
       try {
-        const decoded = jwt.verify(req.headers.authorization.split(' ')[1], process.env.JWT_SECRET || process.env.SUPABASE_JWT_SECRET || 'votre-secret-local-dev');
+        const decoded = jwt.verify(req.headers.authorization.split(' ')[1], process.env.JWT_SECRET);
         authAgentId = decoded.id;
       } catch(e) {}
     }
 
-    // NIN verify
+    if (data.est_etranger === 0 || data.est_etranger === '0' || data.est_etranger === false) {
+      if (!data.nin || !/^\\d{18}$/.test(data.nin)) {
+        return res.status(400).json({ error: 'Le NIN doit contenir exactement 18 chiffres numériques' });
+      }
+    } else {
+      if (!data.num_piece || data.num_piece.trim().length < 5) {
+        return res.status(400).json({ error: 'Le numéro de pièce doit contenir au moins 5 caractères' });
+      }
+    }
+
+    const dob = data.date_naissance ? new Date(data.date_naissance) : null;
+    const age = dob ? Math.floor((Date.now() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : 18;
+    const estMineur = age < 18;
+    if (estMineur && (!data.tuteur_nom?.trim() || !data.tuteur_contact?.trim())) {
+      return res.status(400).json({ error: 'Tuteur obligatoire pour les mineurs' });
+    }
+    data.est_mineur = estMineur ? 1 : 0;
+
     if (data.nin) {
       const existing = await db.get("SELECT id FROM clients WHERE nin = $1", [data.nin]);
       if (existing) return res.status(400).json({ error: 'NIN déjà utilisé' });
@@ -59,10 +119,10 @@ router.post('/', async (req, res) => {
       RETURNING id
     `, [
       data.nom, data.prenom, data.date_naissance || null, data.lieu_naissance,
-      data.adresse_residence, data.sexe, data.nationalite || 'DZ', data.est_etranger || 0,
+      data.adresse_residence, data.sexe, data.nationalite || 'DZ', data.est_etranger ? 1 : 0,
       data.nin || null, data.type_piece || null, data.num_piece || null, data.groupe_sanguin || 'ND',
       data.formule, data.photo_selfie || null, data.photo_piece_recto || null, data.photo_piece_verso || null,
-      data.est_mineur || 0, data.tuteur_nom || null, data.tuteur_contact || null, data.statut || 'en_attente'
+      data.est_mineur, data.tuteur_nom || null, data.tuteur_contact || null, data.statut || 'en_attente'
     ]);
 
     await logAction(authAgentId, 'INSCRIPTION_CLIENT', 'clients', resDb.lastId, data, req.ip);

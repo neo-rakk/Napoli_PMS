@@ -25,6 +25,79 @@ router.get('/', requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/reservations/actives — réservations en cours (pour restauration, etc.)
+router.get('/actives', requireAuth, async (req, res) => {
+  try {
+    const result = await db.all(`
+      SELECT r.*, c.nom, c.prenom, c.groupe_sanguin, c.est_mineur,
+             ch.numero as chambre_numero, b.nom as bloc_nom
+      FROM reservations r
+      JOIN clients c ON r.client_id = c.id
+      JOIN chambres ch ON r.chambre_id = ch.id
+      LEFT JOIN blocs b ON ch.bloc_id = b.id
+      WHERE r.statut = 'checkin'
+      ORDER BY r.date_arrivee DESC
+    `);
+    res.json(result);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// GET /api/reservations/pending-checkout — départs du jour
+router.get('/pending-checkout', requireAuth, async (req, res) => {
+  try {
+    const result = await db.all(`
+      SELECT r.*, c.nom, c.prenom, ch.numero as chambre_numero
+      FROM reservations r
+      JOIN clients c ON r.client_id = c.id
+      JOIN chambres ch ON r.chambre_id = ch.id
+      WHERE r.statut = 'checkin' AND DATE(r.date_checkout_prevu) <= CURRENT_DATE
+      ORDER BY r.date_checkout_prevu ASC
+    `);
+    res.json(result);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// POST /api/reservations/checkin-groupe — check-in collectif
+router.post('/checkin-groupe', requireAuth, requireRole('accueil', 'admin'), async (req, res) => {
+  try {
+    const { groupe_id, chambre_ids, date_checkout_prevu, formule, mode_facturation } = req.body;
+    if (!groupe_id || !chambre_ids?.length) return res.status(400).json({ error: 'groupe_id et chambre_ids obligatoires' });
+
+    const membres = await db.all("SELECT * FROM clients WHERE groupe_id = $1 AND statut = 'en_attente'", [groupe_id]);
+    if (!membres.length) return res.status(400).json({ error: 'Aucun membre en attente dans ce groupe' });
+
+    const created = [];
+    await db.transaction(async (client) => {
+      for (let i = 0; i < membres.length && i < chambre_ids.length; i++) {
+        const membre = membres[i];
+        const chambre_id = chambre_ids[i];
+        const chambreRes = await client.query("SELECT * FROM chambres WHERE id = $1", [chambre_id]);
+        const chambre = chambreRes.rows[0];
+        if (!chambre) continue;
+
+        const pricing = await require('../services/pricingService.cjs').resolveReservationPricing({
+          type_chambre: chambre.type, formule: formule || 'PC', grandCompteId: null
+        });
+
+        const resDb = await client.query(`
+          INSERT INTO reservations (client_id, groupe_id, chambre_id, agent_id, tarif_id,
+            prix_nuit_applique, prix_repas_applique, date_arrivee, date_checkout_prevu, formule, mode_facturation, statut)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), $8, $9, $10, 'checkin') RETURNING id
+        `, [membre.id, groupe_id, chambre_id, req.agent.id, pricing.tarif_id,
+            pricing.prix_nuit, pricing.prix_repas, date_checkout_prevu, formule || 'PC', mode_facturation || 'direct']);
+        created.push(resDb.rows[0].id);
+
+        await client.query("UPDATE clients SET statut = 'enregistre' WHERE id = $1", [membre.id]);
+        const newOcc = chambre.nb_occupants_actuels + 1;
+        const newStatut = newOcc === 0 ? 'libre' : newOcc < chambre.capacite_max ? 'partielle' : 'occupee';
+        await client.query("UPDATE chambres SET nb_occupants_actuels=$1, statut=$2 WHERE id=$3", [newOcc, newStatut, chambre.id]);
+      }
+      await client.query("UPDATE groupes SET statut = 'actif' WHERE id = $1", [groupe_id]);
+    });
+    res.json({ success: true, reservations_creees: created.length });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 router.post('/checkin', requireAuth, requireRole('accueil', 'admin'), async (req, res) => {
   const { 
     client_id, chambre_id, date_checkout_prevu, formule, mode_facturation,
@@ -114,41 +187,52 @@ router.post('/checkin', requireAuth, requireRole('accueil', 'admin'), async (req
 
 router.post('/checkout/:id', requireAuth, requireRole('accueil', 'admin'), async (req, res) => {
   try {
-    const reservationId = req.params.id;
     let result = {};
-    
     await db.transaction(async (client) => {
-      const resData = await client.query('SELECT * FROM reservations WHERE id = $1', [reservationId]);
+      const resData = await client.query('SELECT * FROM reservations WHERE id = $1', [req.params.id]);
       const reservation = resData.rows[0];
       if (!reservation) throw new Error("Réservation introuvable");
-      if (reservation.statut !== 'checkin') throw new Error("Cette réservation n'est pas au statut check-in");
+      if (reservation.statut !== 'checkin') throw new Error("Cette réservation n'est pas en statut check-in");
 
-      // Set checkout date and status
-      await client.query("UPDATE reservations SET date_depart = NOW(), statut = 'checkout' WHERE id = $1", [reservationId]);
-      
-      // Calculate remaining occupants and new room status
+      await client.query(
+        "UPDATE reservations SET date_depart = NOW(), statut = 'checkout', agent_checkout_id = $1 WHERE id = $2",
+        [req.agent.id, req.params.id]
+      );
+
       const chambreRes = await client.query('SELECT * FROM chambres WHERE id = $1', [reservation.chambre_id]);
       const chambre = chambreRes.rows[0];
-      
       const newOccupants = Math.max(0, chambre.nb_occupants_actuels - 1);
-      
-      // Update chambre status => IF checking out, room should become 'en_nettoyage'
-      let finalStatus = chambre.statut;
-      if (newOccupants === 0) {
-        finalStatus = 'sale';
+
+      // CORRECTION : Utiliser uniquement les statuts CDC
+      let newStatut;
+      if (!['travaux', 'bloquee', 'stock_etage'].includes(chambre.statut)) {
+        newStatut = newOccupants === 0 ? 'libre'
+          : newOccupants < chambre.capacite_max ? 'partielle' : 'occupee';
+        await client.query(
+          "UPDATE chambres SET nb_occupants_actuels = $1, statut = $2 WHERE id = $3",
+          [newOccupants, newStatut, chambre.id]
+        );
       } else {
-        // Still occupied
-        finalStatus = calculerStatutChambre(newOccupants, chambre.capacite_max);
+        // Chambre en travaux/bloquée — décrémenter occupants sans changer statut
+        await client.query(
+          "UPDATE chambres SET nb_occupants_actuels = $1 WHERE id = $2",
+          [newOccupants, chambre.id]
+        );
       }
-      await client.query("UPDATE chambres SET nb_occupants_actuels = $1, statut = $2 WHERE id = $3", [newOccupants, finalStatus, chambre.id]);
 
       await client.query("UPDATE clients SET statut = 'checkout' WHERE id = $1", [reservation.client_id]);
 
-      await logAction(req.agent.id, 'CHECKOUT', 'reservations', reservationId, {}, req.ip);
+      // Créer tâche HK si chambre libérée
+      if (newOccupants === 0) {
+        await client.query(`
+          INSERT INTO housekeeping (chambre_id, bloc_id, etage, date_affectation, type, statut, priorite)
+          VALUES ($1, $2, $3, CURRENT_DATE, 'depart', 'a_faire', 'urgente')
+        `, [chambre.id, chambre.bloc_id, chambre.etage]);
+      }
 
+      await logAction(req.agent.id, 'CHECKOUT', 'reservations', req.params.id, {}, req.ip);
       result = { success: true };
     });
-    
     res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -197,6 +281,70 @@ router.get('/:id/solde', requireAuth, async (req, res) => {
   } catch(e) {
     res.status(500).json({error: e.message});
   }
+});
+
+// POST /api/reservations/:id/checkout-anticipe — checkout anticipé avec calcul solde
+router.post('/:id/checkout-anticipe', requireAuth, requireRole('accueil', 'admin'), async (req, res) => {
+  try {
+    const { motif } = req.body;
+    if (!motif?.trim()) return res.status(400).json({ error: 'Le motif est obligatoire (CDC §6.3)' });
+
+    let solde = 0;
+    let encaissementId = null;
+
+    await db.transaction(async (client) => {
+      const resData = await client.query("SELECT * FROM reservations WHERE id = $1", [req.params.id]);
+      const reservation = resData.rows[0];
+      if (!reservation) throw new Error('Réservation introuvable');
+      if (reservation.statut !== 'checkin') throw new Error("Réservation non en cours");
+
+      const dateCheckin = new Date(reservation.date_arrivee);
+      const dateCheckout = new Date();
+      let nuits = Math.ceil((dateCheckout - dateCheckin) / (1000 * 60 * 60 * 24));
+      if (nuits <= 0) nuits = 1;
+
+      const prixNuit = parseFloat(reservation.prix_nuit_applique) || 0;
+      const prixRepas = parseFloat(reservation.prix_repas_applique) || 0;
+      const montantDu = nuits * (prixNuit + prixRepas);
+
+      const paidRes = await client.query(
+        "SELECT COALESCE(SUM(montant), 0) as total FROM encaissements WHERE reservation_id = $1 AND annule = 0",
+        [req.params.id]
+      );
+      const montantPaye = parseFloat(paidRes.rows[0].total) || 0;
+      solde = Math.round((montantDu - montantPaye) * 100) / 100;
+
+      await client.query(`
+        UPDATE reservations SET statut = 'checkout', date_depart = NOW(),
+          agent_checkout_id = $1, est_checkout_anticipe = 1, motif_checkout_anticipe = $2
+        WHERE id = $3
+      `, [req.agent.id, motif, req.params.id]);
+
+      await client.query("UPDATE clients SET statut = 'checkout' WHERE id = $1", [reservation.client_id]);
+
+      const chambreRes = await client.query("SELECT * FROM chambres WHERE id = $1", [reservation.chambre_id]);
+      const room = chambreRes.rows[0];
+      const newOcc = Math.max(0, room.nb_occupants_actuels - 1);
+
+      if (!['travaux', 'bloquee', 'stock_etage'].includes(room.statut)) {
+        const newStatut = newOcc === 0 ? 'libre' : newOcc < room.capacite_max ? 'partielle' : 'occupee';
+        await client.query("UPDATE chambres SET nb_occupants_actuels=$1, statut=$2 WHERE id=$3", [newOcc, newStatut, room.id]);
+      } else {
+        await client.query("UPDATE chambres SET nb_occupants_actuels=$1 WHERE id=$2", [newOcc, room.id]);
+      }
+
+      if (newOcc === 0) {
+        await client.query(`
+          INSERT INTO housekeeping (chambre_id, bloc_id, etage, date_affectation, type, statut, priorite)
+          VALUES ($1, $2, $3, CURRENT_DATE, 'depart', 'a_faire', 'urgente')
+        `, [room.id, room.bloc_id, room.etage]);
+      }
+
+      await logAction(req.agent.id, 'CHECKOUT_ANTICIPE', 'reservations', req.params.id, { motif, nuits, montantDu, montantPaye, solde }, req.ip);
+    });
+
+    res.json({ success: true, solde, encaissement_id: encaissementId });
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 module.exports = router;

@@ -54,7 +54,7 @@ router.post('/', requireAuth, async (req, res) => {
 });
 
 // Assigner un ticket à un technicien
-router.post('/:id/assigner', requireAuth, requireRole('admin', 'reception', 'chef_reception'), async (req, res) => {
+router.post('/:id/assigner', requireAuth, requireRole('admin', 'accueil'), async (req, res) => {
   try {
     const { assigne_a } = req.body;
     await db.query(`UPDATE maintenance SET assigne_a = $1, statut = 'en_cours' WHERE id = $2`, [assigne_a, req.params.id]);
@@ -65,7 +65,7 @@ router.post('/:id/assigner', requireAuth, requireRole('admin', 'reception', 'che
 });
 
 // Mettre à jour l'état (par le tech)
-router.post('/:id/statut', requireAuth, async (req, res) => {
+router.post('/:id/statut', requireAuth, requireRole('admin', 'accueil', 'maintenance'), async (req, res) => {
   try {
     const { statut, rapport, photo_reparation } = req.body;
     let query = `UPDATE maintenance SET statut = $1`;
