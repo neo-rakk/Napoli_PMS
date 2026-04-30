@@ -63,6 +63,10 @@ app.use('/api/stocks', require('./routes/stocks.cjs'));
 // API healthcheck pour valider le serveur
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ error: `Route non trouvée: ${req.method} ${req.originalUrl}` });
+});
+
 app.use((err, req, res, next) => {
   console.error('[Global Error]', err);
   res.status(500).json({ error: err.message || 'Erreur serveur interne' });
