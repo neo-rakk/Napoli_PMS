@@ -8,6 +8,7 @@ export default function MaintenanceDashboard() {
   const [taches, setTaches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [achats, setAchats] = useState([]);
   
   // States for interaction
   const [achatsForm, setAchatsForm] = useState(false);
@@ -33,6 +34,17 @@ export default function MaintenanceDashboard() {
     const interval = setInterval(fetchTaches, 30000);
     return () => clearInterval(interval);
   }, [token, user?.id]);
+
+  useEffect(() => {
+    if (selectedTask) {
+       fetch(`/api/maintenance/${selectedTask.id}/achats`, { headers: { 'Authorization': `Bearer ${token}` } })
+         .then(res => res.json())
+         .then(data => setAchats(data))
+         .catch(console.error);
+    } else {
+       setAchats([]);
+    }
+  }, [selectedTask, token]);
 
   const handleStartTask = async (task) => {
     try {
@@ -85,6 +97,11 @@ export default function MaintenanceDashboard() {
          setAchatsForm(false);
          setNewAchat({ designation: '', quantite: 1, urgence: 'normale' });
          alert("Demande d'achat envoyée à la réception/direction.");
+         
+         fetch(`/api/maintenance/${selectedTask.id}/achats`, { headers: { 'Authorization': `Bearer ${token}` } })
+           .then(res => res.json())
+           .then(data => setAchats(data))
+           .catch(console.error);
       }
     } catch(e) { console.error(e); }
   };
