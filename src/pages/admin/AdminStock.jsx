@@ -265,7 +265,10 @@ export default function AdminStock() {
                    />
                 </td>
                 <td className="px-6 py-4">
-                  <div className="font-bold text-slate-800">{d.designation} <span className="text-slate-400 font-normal">x{d.quantite}</span></div>
+                  <div className="font-bold text-slate-800">
+                    {d.designation} <span className="text-slate-400 font-normal">x{d.quantite}</span>
+                    {d.quantite_commandee && <span className="ml-2 text-indigo-500 font-normal text-xs">(Cmd: x{d.quantite_commandee})</span>}
+                  </div>
                   <div className="text-xs text-slate-500">{d.reference ? `Réf: ${d.reference}` : 'Sans référence'}</div>
                 </td>
                 <td className="px-6 py-4">
@@ -291,7 +294,7 @@ export default function AdminStock() {
                 <td className="px-6 py-4">
                   {d.statut === 'commande' && (
                     <Button size="sm" variant="outline" className="text-xs py-1 h-8 border-emerald-200 text-emerald-700 hover:bg-emerald-50" 
-                       onClick={() => { setShowReception(d); setQuantiteRecue(d.quantite); }}>
+                       onClick={() => { setShowReception(d); setQuantiteRecue(d.quantite_commandee || d.quantite); }}>
                        <CheckCircle className="w-3 h-3 mr-1" /> Recevoir
                     </Button>
                   )}

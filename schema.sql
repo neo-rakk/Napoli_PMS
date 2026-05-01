@@ -334,6 +334,7 @@ CREATE TABLE IF NOT EXISTS maintenance_pieces_demandees (
   designation    TEXT NOT NULL,
   reference      TEXT,
   quantite       INTEGER NOT NULL DEFAULT 1,
+  quantite_commandee INTEGER,
   urgence        TEXT NOT NULL DEFAULT 'normale'
                  CHECK(urgence IN ('immediate','normale','differee')),
   statut         TEXT DEFAULT 'en_attente'

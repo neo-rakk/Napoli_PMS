@@ -141,9 +141,9 @@ router.post('/demandes-maintenance/commander', requireAuth, requireRole('admin')
       for (const id of ids) {
         let qte = quantites[id];
         if (qte) {
-           await client.query(`UPDATE maintenance_pieces_demandees SET statut = 'commande', quantite = $1 WHERE id = $2`, [qte, id]);
+           await client.query(`UPDATE maintenance_pieces_demandees SET statut = 'commande', quantite_commandee = $1 WHERE id = $2`, [qte, id]);
         } else {
-           await client.query(`UPDATE maintenance_pieces_demandees SET statut = 'commande' WHERE id = $1`, [id]);
+           await client.query(`UPDATE maintenance_pieces_demandees SET statut = 'commande', quantite_commandee = quantite WHERE id = $1`, [id]);
         }
       }
     });
@@ -165,9 +165,11 @@ router.post('/demandes-maintenance/:id/recevoir', requireAuth, requireRole('admi
       if (!demande) throw new Error("Demande introuvable");
 
       const qteDemandee = demande.quantite || 1;
+      // We calculate extra based on the difference between received and genuinely requested by the technician.
+      // If the admin received more than what was initially requested, the extra goes to stock.
       const qteExtra = quantite_recue > qteDemandee ? quantite_recue - qteDemandee : 0;
 
-      // 2. Mark as mis_a_disposition with the fulfilled quantity
+      // 2. Mark as mis_a_disposition
       await client.query(`UPDATE maintenance_pieces_demandees SET statut = 'mis_a_disposition' WHERE id = $1`, [req.params.id]);
 
       // 3. If there's extra, try to save/update it in stock_articles
