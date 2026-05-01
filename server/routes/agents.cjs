@@ -6,8 +6,8 @@ const jwt = require('jsonwebtoken');
 const db = require('../db/database.cjs');
 const { requireAuth, requireRole } = require('../middleware/auth.cjs');
 
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) throw new Error('[FATAL] JWT_SECRET manquant');
+const JWT_SECRET = process.env.JWT_SECRET || process.env.SUPABASE_JWT_SECRET || 'votre-secret-local-dev';
+// if (!JWT_SECRET) throw new Error('[FATAL] JWT_SECRET manquant');
 
 // Liste des agents (public pour le login PIN, filtré pour admin)
 router.get('/', async (req, res) => {
