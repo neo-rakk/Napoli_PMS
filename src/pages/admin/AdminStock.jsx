@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { Button } from '../../components/ui/Button';
 import { PackageSearch, PlusCircle, ArrowDownToLine, ArrowUpFromLine, AlertTriangle, FileText, CheckCircle } from 'lucide-react';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export default function AdminStock() {
   const { token, user } = useAuthStore();
@@ -143,7 +143,7 @@ export default function AdminStock() {
       `Ch: ${item.chambre_numero} / Urgence: ${item.urgence}`
     ]);
 
-    doc.autoTable({
+    autoTable(doc, {
       startY: 50,
       head: [['#', 'Désignation', 'Référence', 'Quantité', 'Informations']],
       body: tableData,
