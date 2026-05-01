@@ -1,32 +1,46 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { Button } from '../../components/ui/Button';
-import { PackageSearch, PlusCircle, ArrowDownToLine, ArrowUpFromLine, AlertTriangle } from 'lucide-react';
+import { PackageSearch, PlusCircle, ArrowDownToLine, ArrowUpFromLine, AlertTriangle, FileText, CheckCircle } from 'lucide-react';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 export default function AdminStock() {
   const { token, user } = useAuthStore();
   const [articles, setArticles] = useState([]);
+  const [demandes, setDemandes] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Modals
   const [showCreate, setShowCreate] = useState(false);
   const [showMvt, setShowMvt] = useState(false);
+  const [showBonAchat, setShowBonAchat] = useState(false);
+  const [showReception, setShowReception] = useState(null); // stores the demande object
+  const [quantiteRecue, setQuantiteRecue] = useState(1);
   const [selectedArticle, setSelectedArticle] = useState(null);
+
+  // Selection for PO
+  const [selectedDemandes, setSelectedDemandes] = useState([]);
+  const [quantitesCommande, setQuantitesCommande] = useState({});
 
   // Forms
   const [form, setForm] = useState({ nom: '', categorie: 'economat', seuil_alerte: 5, unite: 'Unités', description: '' });
   const [mvtForm, setMvtForm] = useState({ type_mouvement: 'entree', quantite: 1, reference: '' });
 
-  const fetchArticles = async () => {
+  const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/stocks', { headers: { 'Authorization': `Bearer ${token}` } });
-      setArticles(await res.json());
+      const [resArticles, resDemandes] = await Promise.all([
+        fetch('/api/stocks', { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch('/api/stocks/demandes-maintenance', { headers: { 'Authorization': `Bearer ${token}` } })
+      ]);
+      setArticles(await resArticles.json());
+      setDemandes(await resDemandes.json());
     } catch(e) { console.error(e); }
     finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchArticles(); }, [token]);
+  useEffect(() => { fetchData(); }, [token]);
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -39,7 +53,7 @@ export default function AdminStock() {
       if(res.ok) {
         setShowCreate(false);
         setForm({ nom: '', categorie: 'economat', seuil_alerte: 5, unite: 'Unités', description: '' });
-        fetchArticles();
+        fetchData();
       }
     } catch(e) {}
   };
@@ -56,7 +70,7 @@ export default function AdminStock() {
          setShowMvt(false);
          setSelectedArticle(null);
          setMvtForm({ type_mouvement: 'entree', quantite: 1, reference: '' });
-         fetchArticles();
+         fetchData();
       }
     } catch(e) {}
   };
@@ -65,6 +79,91 @@ export default function AdminStock() {
      setSelectedArticle(a);
      setMvtForm({ ...mvtForm, type_mouvement: type });
      setShowMvt(true);
+  };
+
+  const handleUpdateDemandeStatut = async (id, statut) => {
+    try {
+      const res = await fetch(`/api/stocks/demandes-maintenance/${id}/statut`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ statut })
+      });
+      if(res.ok) fetchData();
+    } catch(e) { console.error(e); }
+  };
+
+  const handleReception = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(`/api/stocks/demandes-maintenance/${showReception.id}/recevoir`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ quantite_recue: quantiteRecue })
+      });
+      if(res.ok) {
+         setShowReception(null);
+         fetchData();
+      }
+    } catch(e) { console.error(e); }
+  };
+
+  const openBonAchatModal = () => {
+    if (selectedDemandes.length === 0) return alert('Sélectionnez au moins un article');
+    
+    // Initialize quantities for selected items
+    const qtes = {};
+    selectedDemandes.forEach(id => {
+      const dem = demandes.find(d => d.id === id);
+      qtes[id] = dem.quantite;
+    });
+    setQuantitesCommande(qtes);
+    setShowBonAchat(true);
+  };
+
+  const generateBonAchatAndStore = async () => {
+    const items = selectedDemandes.map(id => {
+      const dem = demandes.find(d => d.id === id);
+      return { ...dem, orderQuantite: quantitesCommande[id] };
+    });
+
+    // Generate PDF
+    const doc = new jsPDF();
+    doc.setFontSize(22);
+    doc.text('Bon d\'Achat - Maintenance', 14, 22);
+    
+    doc.setFontSize(12);
+    doc.text(`Date: ${new Date().toLocaleDateString('fr-FR')}`, 14, 32);
+    doc.text(`Édité par: ${user.prenom} ${user.nom}`, 14, 40);
+
+    const tableData = items.map((item, idx) => [
+      idx + 1,
+      item.designation,
+      item.reference || '-',
+      item.orderQuantite,
+      `Ch: ${item.chambre_numero} / Urgence: ${item.urgence}`
+    ]);
+
+    doc.autoTable({
+      startY: 50,
+      head: [['#', 'Désignation', 'Référence', 'Quantité', 'Informations']],
+      body: tableData,
+    });
+
+    try {
+      // API call to set status to 'commande'
+      const res = await fetch('/api/stocks/demandes-maintenance/commander', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+         body: JSON.stringify({ ids: selectedDemandes, quantites: quantitesCommande })
+      });
+      
+      if(res.ok) {
+        doc.save(`Bon_Achat_Maintenance_${Date.now()}.pdf`);
+        setShowBonAchat(false);
+        setSelectedDemandes([]);
+        fetchData();
+      }
+    } catch(e) { console.error(e); }
   };
 
   return (
@@ -116,6 +215,160 @@ export default function AdminStock() {
            </div>
         ))}
       </div>
+
+      <div className="mt-12 mb-6 flex justify-between items-center">
+        <div>
+           <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+             <FileText className="w-6 h-6 text-indigo-600" /> Achats Maintenance
+           </h2>
+           <p className="text-sm text-slate-500">Gérez les demandes de pièces depuis les tickets de maintenance</p>
+        </div>
+        <Button onClick={openBonAchatModal} className="bg-indigo-600 hover:bg-indigo-700">
+           <FileText className="w-4 h-4 mr-2" /> Créer Bon d'Achat
+        </Button>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto mb-12">
+        <table className="w-full text-left text-sm text-slate-600">
+          <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-xs">
+            <tr>
+              <th className="px-6 py-4 w-12">
+                 <input 
+                    type="checkbox" 
+                    onChange={e => setSelectedDemandes(e.target.checked ? demandes.map(d => d.id) : [])}
+                    checked={selectedDemandes.length > 0 && selectedDemandes.length === demandes.length}
+                    className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600"
+                 />
+              </th>
+              <th className="px-6 py-4">Article</th>
+              <th className="px-6 py-4">Chambre & Urgence</th>
+              <th className="px-6 py-4">Technicien</th>
+              <th className="px-6 py-4">Statut</th>
+              <th className="px-6 py-4">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {demandes.length === 0 && (
+              <tr><td colSpan="6" className="text-center py-6 text-slate-500">Aucune demande en attente</td></tr>
+            )}
+            {demandes.map(d => (
+              <tr key={d.id} className="hover:bg-slate-50 transition-colors">
+                <td className="px-6 py-4">
+                   <input 
+                      type="checkbox" 
+                      onChange={e => {
+                        if (e.target.checked) setSelectedDemandes([...selectedDemandes, d.id]);
+                        else setSelectedDemandes(selectedDemandes.filter(id => id !== d.id));
+                      }}
+                      checked={selectedDemandes.includes(d.id)}
+                      className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600"
+                   />
+                </td>
+                <td className="px-6 py-4">
+                  <div className="font-bold text-slate-800">{d.designation} <span className="text-slate-400 font-normal">x{d.quantite}</span></div>
+                  <div className="text-xs text-slate-500">{d.reference ? `Réf: ${d.reference}` : 'Sans référence'}</div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="font-medium text-slate-800">Chambre {d.chambre_numero}</div>
+                  <div className={`text-xs uppercase font-bold mt-1 ${d.urgence === 'immediate' ? 'text-red-500' : 'text-amber-500'}`}>
+                    Urgence {d.urgence}
+                  </div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="font-medium">{d.agent_prenom} {d.agent_nom}</div>
+                  <div className="text-xs text-slate-500">{new Date(d.created_at).toLocaleDateString()}</div>
+                </td>
+                <td className="px-6 py-4">
+                  <span className={`px-2 py-1 text-xs font-bold uppercase rounded ${
+                     d.statut === 'en_attente' ? 'bg-amber-100 text-amber-700' :
+                     d.statut === 'commande' ? 'bg-indigo-100 text-indigo-700' :
+                     d.statut === 'mis_a_disposition' ? 'bg-emerald-100 text-emerald-700' :
+                     'bg-slate-100 text-slate-700'
+                  }`}>
+                    {d.statut}
+                  </span>
+                </td>
+                <td className="px-6 py-4">
+                  {d.statut === 'commande' && (
+                    <Button size="sm" variant="outline" className="text-xs py-1 h-8 border-emerald-200 text-emerald-700 hover:bg-emerald-50" 
+                       onClick={() => { setShowReception(d); setQuantiteRecue(d.quantite); }}>
+                       <CheckCircle className="w-3 h-3 mr-1" /> Recevoir
+                    </Button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {showReception && (
+         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+           <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6">
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-emerald-700">
+                 <ArrowDownToLine className="w-5 h-5" /> Réception de Pièce
+              </h2>
+              <p className="text-slate-500 text-sm mb-4 font-medium">Article : {showReception.designation}</p>
+              
+              <form onSubmit={handleReception} className="space-y-4">
+                 <div>
+                   <label className="block text-sm font-bold mb-1 text-slate-700">Quantité totale reçue</label>
+                   <input required type="number" min="1" className="w-full border rounded-md p-3 text-lg font-bold" value={quantiteRecue} onChange={e=>setQuantiteRecue(parseInt(e.target.value))} />
+                   <p className="text-xs text-slate-400 mt-2">
+                     Demandé pour le ticket : <strong className="text-slate-600">{showReception.quantite}</strong><br/>
+                     Tout surplus sera automatiquement ajouté dans <em>Économat & Stocks</em> sous la section Maintenance.
+                   </p>
+                 </div>
+                 <div className="pt-4 flex justify-end gap-3 mt-4 border-t border-slate-100">
+                   <Button variant="outline" type="button" onClick={() => setShowReception(null)}>Annuler</Button>
+                   <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 font-bold">Confirmer Réception</Button>
+                 </div>
+              </form>
+           </div>
+         </div>
+      )}
+
+      {showBonAchat && (
+         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+           <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                 <FileText className="w-5 h-5 text-indigo-600" /> Générer un Bon d'Achat
+              </h2>
+              <p className="text-slate-500 text-sm mb-6 font-medium">Validation des articles et quantités avant commande :</p>
+              
+              <div className="space-y-4 mb-6">
+                 {selectedDemandes.map(id => {
+                    const dem = demandes.find(d => d.id === id);
+                    return (
+                       <div key={id} className="flex items-center justify-between p-3 border rounded-lg bg-slate-50">
+                          <div>
+                             <div className="font-bold text-sm text-slate-800">{dem.designation}</div>
+                             <div className="text-xs text-slate-500">Ch: {dem.chambre_numero} - Tech: {dem.agent_nom}</div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                             <label className="text-xs font-bold text-slate-500">Qté :</label>
+                             <input 
+                                type="number" 
+                                min="1" 
+                                className="w-20 border rounded p-1 text-center font-bold" 
+                                value={quantitesCommande[id] || ''} 
+                                onChange={e => setQuantitesCommande({...quantitesCommande, [id]: parseInt(e.target.value) || 1})}
+                             />
+                          </div>
+                       </div>
+                    );
+                 })}
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                <Button variant="outline" onClick={() => setShowBonAchat(false)}>Annuler</Button>
+                <Button className="bg-indigo-600 hover:bg-indigo-700" onClick={generateBonAchatAndStore}>
+                   Générer & Télécharger PDF
+                </Button>
+              </div>
+           </div>
+         </div>
+      )}
 
       {showCreate && (
          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">

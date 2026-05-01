@@ -337,7 +337,7 @@ CREATE TABLE IF NOT EXISTS maintenance_pieces_demandees (
   urgence        TEXT NOT NULL DEFAULT 'normale'
                  CHECK(urgence IN ('immediate','normale','differee')),
   statut         TEXT DEFAULT 'en_attente'
-                 CHECK(statut IN ('en_attente','commande','recu','refuse')),
+                 CHECK(statut IN ('en_attente','commande','recu','mis_a_disposition','refuse')),
   notes          TEXT,
   created_at     TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
