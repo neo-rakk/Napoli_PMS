@@ -24,7 +24,7 @@ router.get('/', requireAuth, async (req, res) => {
   try {
     const taches = await db.all(`
       SELECT m.*, 
-             c.numero as chambre_numero, c.bloc_nom as chambre_bloc,
+             c.numero as chambre_numero, c.bloc as chambre_bloc,
              s.nom as signaleur_nom, s.prenom as signaleur_prenom, s.role as signaleur_role,
              a.nom as agent_nom, a.prenom as agent_prenom
       FROM maintenance m

@@ -117,7 +117,7 @@ export default function AdminFacturation() {
           )}
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 overflow-y-auto">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto flex-1 overflow-y-auto">
           {loading && <div className="p-8 text-center text-slate-500">Chargement...</div>}
           {!loading && comptes.length === 0 && <div className="p-8 text-center text-slate-500">Aucun grand compte enregistré.</div>}
           

@@ -22,7 +22,7 @@ export default function MaintenanceDashboard() {
       const res = await fetch('/api/maintenance', { headers: { 'Authorization': `Bearer ${token}` } });
       const data = await res.json();
       // Only show tasks assigned to this tech, or unassigned (signale)
-      const myTasks = Array.isArray(data) ? data.filter(t => t.assigne_a === user.id || t.statut === 'signale') : [];
+      const myTasks = Array.isArray(data) ? data.filter(t => t.assigne_a == user.id || t.statut === 'signale') : [];
       setTaches(myTasks);
     } catch(e) { console.error(e); }
     finally { setLoading(false); }
@@ -37,7 +37,7 @@ export default function MaintenanceDashboard() {
   const handleStartTask = async (task) => {
     try {
       // First assign to me if not already assigned
-      if(task.assigne_a !== user.id) {
+      if(task.assigne_a != user.id) {
          await fetch(`/api/maintenance/${task.id}/assigner`, {
            method: 'POST',
            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -128,7 +128,7 @@ export default function MaintenanceDashboard() {
                        {t.chambre_numero ? `Chambre ${t.chambre_numero}` : t.localisation}
                     </p>
                   </div>
-                  {t.statut === 'en_cours' && t.assigne_a === user.id && (
+                  {t.statut === 'en_cours' && t.assigne_a == user.id && (
                      <div className="w-3 h-3 rounded-full bg-orange-500 animate-pulse"></div>
                   )}
                </div>
@@ -139,7 +139,7 @@ export default function MaintenanceDashboard() {
                   </p>
                </div>
                <div className="p-4 bg-white border-t border-neutral-100">
-                  {t.statut === 'en_cours' && t.assigne_a === user.id ? (
+                  {t.statut === 'en_cours' && t.assigne_a == user.id ? (
                      <Button className="w-full bg-orange-600 hover:bg-orange-700 font-bold tracking-wide uppercase shadow-lg shadow-orange-600/20" onClick={() => setSelectedTask(t)}>
                         <PenTool className="w-4 h-4 mr-2" />
                         Gérer / Clôturer

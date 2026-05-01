@@ -21,7 +21,7 @@ export default function ClientsListAdmin() {
         <p className="text-slate-500">Base de données complète de tous les clients.</p>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
         <table className="w-full text-left text-sm text-slate-600">
           <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-xs">
             <tr>
