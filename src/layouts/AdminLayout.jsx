@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Outlet, NavLink, useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
-import { LayoutDashboard, Users, UserCog, Building, DollarSign, Settings, LogOut, PackageSearch, TrendingUp, BadgeDollarSign, Coffee, ShieldCheck, Home, Wrench } from 'lucide-react';
+import { LayoutDashboard, Users, UserCog, Building, DollarSign, Settings, LogOut, PackageSearch, TrendingUp, BadgeDollarSign, Coffee, ShieldCheck, Home, Wrench, Menu } from 'lucide-react';
 
 export default function AdminLayout() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -35,52 +36,90 @@ export default function AdminLayout() {
 
   return (
     <div className="min-h-screen flex bg-gray-100">
+      {/* Spacer for collapsed sidebar */}
+      <div className="w-20 shrink-0 hidden sm:block"></div>
+
+      {/* Overlay to close sidebar */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/20 sm:bg-transparent"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar admin */}
-      <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col sticky top-0 h-screen overflow-hidden">
-        <div className="p-6 border-b border-slate-800 shrink-0">
-          <h1 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-            <span className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-sm font-black text-white">VO</span>
-            Administration
-          </h1>
-          <p className="text-xs opacity-60 mt-1">
-            {user?.prenom} {user?.nom} - {user?.role}
-          </p>
+      <aside 
+        className={`fixed top-0 left-0 h-screen bg-slate-900 text-slate-300 flex flex-col z-50 transition-all duration-300 shadow-2xl overflow-hidden ${isSidebarOpen ? 'w-64' : 'w-0 sm:w-20'}`}
+      >
+        <div className={`p-4 border-b border-slate-800 shrink-0 flex items-center ${isSidebarOpen ? 'justify-between' : 'justify-center'}`}>
+          <div className={`flex items-center gap-2 overflow-hidden whitespace-nowrap transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}`}>
+            <span className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-sm font-black text-white shrink-0">VO</span>
+            <span className="text-xl font-bold text-white tracking-tight">
+              Administration
+            </span>
+          </div>
+          <button 
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
+            className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
+          >
+            <Menu className="w-5 h-5 shrink-0" />
+          </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
-          <div className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mt-2">
+        {isSidebarOpen && (
+          <div className="px-6 py-2 border-b border-slate-800 bg-slate-950/30">
+            <p className="text-xs opacity-60 truncate">
+              {user?.prenom} {user?.nom} - {user?.role}
+            </p>
+          </div>
+        )}
+
+        <div className="flex-1 overflow-y-auto no-scrollbar">
+          <div className={`px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mt-2 whitespace-nowrap ${!isSidebarOpen && 'hidden'}`}>
             Gestion
           </div>
-          <nav className="py-2">
+          <nav className="py-2 flex flex-col gap-1 px-2">
             {menuItems.map((item) => (
               <NavLink
                 key={item.path}
                 to={item.path}
                 end={item.exact}
+                title={item.name}
+                onClick={() => setIsSidebarOpen(false)}
                 className={({ isActive }) =>
-                  `flex items-center px-6 py-2 text-sm font-medium transition-colors ${
+                  `flex items-center rounded-lg transition-colors overflow-hidden whitespace-nowrap ${
+                    isSidebarOpen ? 'px-4 py-2 text-sm font-medium' : 'p-3 justify-center text-xs'
+                  } ${
                     isActive ? 'bg-emerald-600 text-white' : 'hover:bg-slate-800 text-slate-300'
                   }`
                 }
               >
-                <item.icon className="w-4 h-4 mr-3" />
-                {item.name}
+                <item.icon className={`w-5 h-5 shrink-0 ${isSidebarOpen ? 'mr-3' : ''}`} />
+                <span className={`transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 hidden'}`}>
+                  {item.name}
+                </span>
               </NavLink>
             ))}
           </nav>
 
-          <div className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mt-4 border-t border-slate-800">
+          <div className={`px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mt-4 border-t border-slate-800 whitespace-nowrap ${!isSidebarOpen && 'hidden'}`}>
             Modules Agents
           </div>
-          <nav className="py-2">
+          <nav className="py-2 flex flex-col gap-1 px-2 border-t border-slate-800 sm:border-t-0">
             {agentModules.map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
-                className="flex items-center px-6 py-2 text-sm font-medium transition-colors hover:bg-slate-800 text-slate-300"
+                title={item.name}
+                onClick={() => setIsSidebarOpen(false)}
+                className={`flex items-center rounded-lg transition-colors hover:bg-slate-800 text-slate-300 overflow-hidden whitespace-nowrap ${
+                  isSidebarOpen ? 'px-4 py-2 text-sm font-medium' : 'p-3 justify-center text-xs'
+                }`}
               >
-                <item.icon className={`w-4 h-4 mr-3 ${item.color}`} />
-                {item.name}
+                <item.icon className={`w-5 h-5 shrink-0 ${item.color} ${isSidebarOpen ? 'mr-3' : ''}`} />
+                <span className={`transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 hidden'}`}>
+                  {item.name}
+                </span>
               </Link>
             ))}
           </nav>
@@ -89,16 +128,28 @@ export default function AdminLayout() {
         <div className="p-4 border-t border-slate-800 shrink-0">
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 w-full justify-center px-4 py-3 rounded-md text-sm font-medium hover:bg-red-900/50 text-red-400 hover:text-red-300 transition-colors"
+            title="Déconnexion"
+            className={`flex items-center w-full rounded-md text-sm font-medium hover:bg-red-900/50 text-red-400 hover:text-red-300 transition-colors overflow-hidden whitespace-nowrap ${
+              isSidebarOpen ? 'px-4 py-3 justify-center gap-2' : 'p-3 justify-center'
+            }`}
           >
-            <LogOut className="w-4 h-4" />
-            Déconnexion
+            <LogOut className="w-5 h-5 shrink-0" />
+            <span className={`transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 hidden'}`}>
+              Déconnexion
+            </span>
           </button>
         </div>
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 p-8 overflow-y-auto">
+      <main className="flex-1 p-4 sm:p-8 overflow-y-auto w-full min-w-0">
+        {/* Mobile Header when sidebar is hidden */}
+        <div className="sm:hidden mb-4 flex items-center justify-between bg-white p-4 rounded-xl shadow-sm">
+          <span className="font-bold tracking-tight">Administration</span>
+          <button onClick={() => setIsSidebarOpen(true)} className="p-2 bg-slate-100 rounded-lg">
+            <Menu className="w-5 h-5" />
+          </button>
+        </div>
         <Outlet />
       </main>
     </div>
