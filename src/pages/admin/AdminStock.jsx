@@ -193,14 +193,14 @@ export default function AdminStock() {
         const sorties = mvts.filter(m => m.type_mouvement === 'sortie');
         const entrees = mvts.filter(m => m.type_mouvement === 'entree');
         
-        const lastSortie = sorties[0] ? `${sorties[0].agent_prenom} ${sorties[0].agent_nom} (${new Date(sorties[0].created_at).toLocaleDateString()})` : '-';
-        const lastEntree = entrees[0] ? `${entrees[0].agent_prenom} ${entrees[0].agent_nom} (${new Date(entrees[0].created_at).toLocaleDateString()})` : '-';
+        const lastSortie = sorties[0] ? `${sorties[0].agent_prenom || ''} ${sorties[0].agent_nom || ''} (${new Date(sorties[0].created_at).toLocaleDateString('fr-FR')})` : '-';
+        const lastEntree = entrees[0] ? `${entrees[0].agent_prenom || ''} ${entrees[0].agent_nom || ''} (${new Date(entrees[0].created_at).toLocaleDateString('fr-FR')})` : '-';
         
         return [
-          a.categorie.toUpperCase(),
-          a.nom,
-          `${a.quantite_actuelle} ${a.unite}`,
-          a.seuil_alerte,
+          (a.categorie || 'AUTRE').toUpperCase(),
+          a.nom || 'Sans nom',
+          `${a.quantite_actuelle || 0} ${a.unite || 'Unité'}`,
+          (a.seuil_alerte || 0).toString(),
           sorties.length.toString(),
           lastSortie,
           lastEntree
@@ -222,7 +222,7 @@ export default function AdminStock() {
       setPdfPreviewUrl(doc.output('bloburl'));
     } catch(e) {
       alert("Erreur lors de la génération de l'état des stocks.");
-      console.error(e);
+      console.error("PDF GENERATION ERROR:", e);
     }
   };
 
