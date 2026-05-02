@@ -17,6 +17,7 @@ export default function AdminStock() {
   const [showBonAchat, setShowBonAchat] = useState(false);
   const [showReception, setShowReception] = useState(null); // stores the demande object
   const [quantiteRecue, setQuantiteRecue] = useState(1);
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null);
   const [selectedArticle, setSelectedArticle] = useState(null);
 
   // Selection for PO
@@ -34,8 +35,10 @@ export default function AdminStock() {
         fetch('/api/stocks', { headers: { 'Authorization': `Bearer ${token}` } }),
         fetch('/api/stocks/demandes-maintenance', { headers: { 'Authorization': `Bearer ${token}` } })
       ]);
-      setArticles(await resArticles.json());
-      setDemandes(await resDemandes.json());
+      const dataArticles = await resArticles.json();
+      const dataDemandes = await resDemandes.json();
+      setArticles(Array.isArray(dataArticles) ? dataArticles : []);
+      setDemandes(Array.isArray(dataDemandes) ? dataDemandes : []);
     } catch(e) { console.error(e); }
     finally { setLoading(false); }
   };
@@ -158,7 +161,12 @@ export default function AdminStock() {
       });
       
       if(res.ok) {
-        doc.save(`Bon_Achat_Maintenance_${Date.now()}.pdf`);
+        try {
+          doc.save(`Bon_Achat_Maintenance_${Date.now()}.pdf`);
+        } catch(e) {}
+        
+        setPdfPreviewUrl(doc.output('bloburl'));
+        
         setShowBonAchat(false);
         setSelectedDemandes([]);
         fetchData();
