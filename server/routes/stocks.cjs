@@ -203,4 +203,21 @@ router.post('/demandes-maintenance/:id/recevoir', requireAuth, requireRole('admi
   }
 });
 
+router.get('/etat-complet', requireAuth, requireRole('admin'), async (req, res) => {
+  try {
+    const articles = await db.all("SELECT * FROM stock_articles ORDER BY categorie, nom");
+    const mouvements = await db.all(`
+      SELECT m.*, a.prenom, a.nom as agent_nom, s.nom as article_nom 
+      FROM stock_mouvements m 
+      LEFT JOIN agents a ON m.agent_id = a.id
+      LEFT JOIN stock_articles s ON m.article_id = s.id
+      ORDER BY m.created_at DESC
+    `);
+    
+    res.json({ articles, mouvements });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 module.exports = router;

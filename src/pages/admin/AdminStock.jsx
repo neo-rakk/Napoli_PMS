@@ -166,6 +166,58 @@ export default function AdminStock() {
     } catch(e) { console.error(e); }
   };
 
+  const generateEtatStocksPDF = async () => {
+    try {
+      const res = await fetch('/api/stocks/etat-complet', { headers: { 'Authorization': `Bearer ${token}` } });
+      if(!res.ok) throw new Error("Erreur API");
+      const { articles, mouvements } = await res.json();
+
+      const doc = new jsPDF('landscape');
+      doc.setFontSize(22);
+      doc.text('État Complet des Stocks', 14, 22);
+      
+      doc.setFontSize(10);
+      doc.text(`Date de génération : ${new Date().toLocaleString('fr-FR')}`, 14, 30);
+      doc.text(`Édité par : ${user.prenom} ${user.nom}`, 14, 36);
+
+      const tableData = articles.map(a => {
+        const mvts = mouvements.filter(m => m.article_id === a.id);
+        const sorties = mvts.filter(m => m.type_mouvement === 'sortie');
+        const entrees = mvts.filter(m => m.type_mouvement === 'entree');
+        
+        const lastSortie = sorties[0] ? `${sorties[0].agent_prenom} ${sorties[0].agent_nom} (${new Date(sorties[0].created_at).toLocaleDateString()})` : '-';
+        const lastEntree = entrees[0] ? `${entrees[0].agent_prenom} ${entrees[0].agent_nom} (${new Date(entrees[0].created_at).toLocaleDateString()})` : '-';
+        
+        return [
+          a.categorie.toUpperCase(),
+          a.nom,
+          `${a.quantite_actuelle} ${a.unite}`,
+          a.seuil_alerte,
+          sorties.length.toString(),
+          lastSortie,
+          lastEntree
+        ];
+      });
+
+      autoTable(doc, {
+        startY: 45,
+        head: [['Catégorie', 'Article', 'En Stock', 'Seuil', 'Fréq. Sorties', 'Dernière Sortie (Par)', 'Dernière Entrée (Par)']],
+        body: tableData,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [15, 118, 110] } // emerald-700
+      });
+
+      try {
+        doc.save(`Etat_Complet_Stocks_${Date.now()}.pdf`);
+      } catch(e) {}
+      
+      setPdfPreviewUrl(doc.output('bloburl'));
+    } catch(e) {
+      alert("Erreur lors de la génération de l'état des stocks.");
+      console.error(e);
+    }
+  };
+
   return (
     <div className="p-8 max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-8">
@@ -175,9 +227,14 @@ export default function AdminStock() {
           </h1>
           <p className="text-slate-500">Gérez l'inventaire des produits (Housekeeping, Maintenance, POS).</p>
         </div>
-        <Button onClick={() => setShowCreate(true)} className="bg-emerald-600 hover:bg-emerald-700">
-           <PlusCircle className="w-4 h-4 mr-2" /> Nouvel Article
-        </Button>
+        <div className="flex gap-3">
+           <Button onClick={generateEtatStocksPDF} variant="outline" className="border-slate-300 text-slate-700 hover:bg-slate-50">
+              <FileText className="w-4 h-4 mr-2" /> État des Stocks PDF
+           </Button>
+           <Button onClick={() => setShowCreate(true)} className="bg-emerald-600 hover:bg-emerald-700">
+              <PlusCircle className="w-4 h-4 mr-2" /> Nouvel Article
+           </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -438,6 +495,19 @@ export default function AdminStock() {
               </form>
            </div>
          </div>
+      )}
+
+      {pdfPreviewUrl && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[60] flex flex-col items-center justify-center p-4">
+           <div className="bg-white rounded-t-xl w-full max-w-4xl p-4 flex justify-between items-center">
+              <h2 className="font-bold text-lg">Aperçu du document PDF</h2>
+              <div className="flex gap-2">
+                 <Button variant="outline" onClick={() => window.open(pdfPreviewUrl)}>Ouvrir Nouvel Onglet</Button>
+                 <Button className="bg-slate-800" onClick={() => setPdfPreviewUrl(null)}>Fermer</Button>
+              </div>
+           </div>
+           <iframe src={pdfPreviewUrl} className="w-full max-w-4xl h-[80vh] bg-slate-100 rounded-b-xl border-none"></iframe>
+        </div>
       )}
 
     </div>
