@@ -288,7 +288,7 @@ export default function AdminHebergement() {
               <div className="space-y-2 text-sm text-slate-600">
                 <div className="flex justify-between">
                   <span>Étages :</span>
-                  <span className="font-semibold text-slate-800">{bloc.nb_etages}</span>
+                  <span className="font-semibold text-slate-800">{bloc.nb_etages_reels > 0 ? bloc.nb_etages_reels : bloc.nb_etages}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Chambres totales :</span>
@@ -352,7 +352,7 @@ export default function AdminHebergement() {
           </button>
           <div className="flex-1">
             <h1 className="text-2xl font-bold text-slate-800">Bloc: {selectedBloc.nom}</h1>
-            <p className="text-slate-500">{selectedBloc.nb_etages} étages — {chambres.length} chambres totales</p>
+            <p className="text-slate-500">{selectedBloc.nb_etages_reels > 0 ? selectedBloc.nb_etages_reels : selectedBloc.nb_etages} étages — {chambres.length} chambres totales</p>
           </div>
           
           {chambres.length === 0 ? (

@@ -11,6 +11,7 @@ router.get('/', requireAuth, async (req, res) => {
     const blocs = await db.all(`
       SELECT b.*,
         COUNT(c.id) as nb_chambres,
+        COUNT(DISTINCT c.etage) as nb_etages_reels,
         SUM(CASE WHEN c.statut = 'occupee' THEN 1 ELSE 0 END) as nb_occupees,
         SUM(CASE WHEN c.statut = 'partielle' THEN 1 ELSE 0 END) as nb_partielles,
         SUM(CASE WHEN c.statut = 'libre' THEN 1 ELSE 0 END) as nb_libres
