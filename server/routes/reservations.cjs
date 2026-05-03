@@ -98,6 +98,44 @@ router.post('/checkin-groupe', requireAuth, requireRole('accueil', 'admin'), asy
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+router.post('/simulate', requireAuth, requireRole('accueil', 'admin'), async (req, res) => {
+  try {
+    const { chambre_id, date_checkout_prevu, formule, mode_facturation, grand_compte_id } = req.body;
+    if (!chambre_id || !date_checkout_prevu || !formule || !mode_facturation) {
+      return res.status(400).json({ error: 'Données incomplètes' });
+    }
+
+    const chambreRes = await db.query('SELECT * FROM chambres WHERE id = $1', [chambre_id]);
+    const chambreData = chambreRes.rows[0];
+    if (!chambreData) throw new Error('Chambre introuvable');
+
+    const pricing = await resolveReservationPricing({
+      type_chambre: chambreData.type,
+      formule: formule,
+      grandCompteId: mode_facturation === 'grand_compte' ? grand_compte_id : null,
+    });
+
+    const dateIn = new Date(); dateIn.setHours(0,0,0,0);
+    const dateOut = new Date(date_checkout_prevu); dateOut.setHours(0,0,0,0);
+    const nuits = Math.max(1, Math.ceil((dateOut - dateIn) / 86400000));
+    
+    const total_nuit = nuits * pricing.prix_nuit;
+    const total_repas = nuits * pricing.prix_repas;
+
+    res.json({
+      nuits,
+      prix_nuit: pricing.prix_nuit,
+      prix_repas: pricing.prix_repas,
+      total_nuit,
+      total_repas,
+      total: total_nuit + total_repas,
+      source_tarif: pricing.source_tarif
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.post('/checkin', requireAuth, requireRole('accueil', 'admin'), async (req, res) => {
   const { 
     client_id, chambre_id, date_checkout_prevu, formule, mode_facturation,

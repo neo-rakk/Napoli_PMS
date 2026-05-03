@@ -41,12 +41,13 @@ router.get('/:id', requireAuth, async (req, res) => {
 // PUT /api/clients/:id — modifier client
 router.put('/:id', requireAuth, requireRole('admin', 'accueil'), async (req, res) => {
   try {
-    const { nom, prenom, date_naissance, lieu_naissance, adresse_residence, sexe, groupe_sanguin, formule, tuteur_nom, tuteur_contact } = req.body;
+    const { nom, prenom, date_naissance, lieu_naissance, adresse_residence, sexe, groupe_sanguin, formule, tuteur_nom, tuteur_contact, nin, num_piece, nationalite, est_etranger, type_piece } = req.body;
     await db.run(`
       UPDATE clients SET nom=$1, prenom=$2, date_naissance=$3, lieu_naissance=$4,
-        adresse_residence=$5, sexe=$6, groupe_sanguin=$7, formule=$8, tuteur_nom=$9, tuteur_contact=$10
-      WHERE id=$11
-    `, [nom, prenom, date_naissance, lieu_naissance, adresse_residence, sexe, groupe_sanguin, formule, tuteur_nom, tuteur_contact, req.params.id]);
+        adresse_residence=$5, sexe=$6, groupe_sanguin=$7, formule=$8, tuteur_nom=$9, tuteur_contact=$10,
+        nin=$11, num_piece=$12, nationalite=$13, est_etranger=$14, type_piece=$15
+      WHERE id=$16
+    `, [nom, prenom, date_naissance, lieu_naissance, adresse_residence, sexe, groupe_sanguin, formule, tuteur_nom, tuteur_contact, nin, num_piece, nationalite, est_etranger ? 1 : 0, type_piece, req.params.id]);
     await logAction(req.agent.id, 'MODIFICATION_CLIENT', 'clients', req.params.id, req.body, req.ip);
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
