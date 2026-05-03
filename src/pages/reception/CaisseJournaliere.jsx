@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
+import { Button } from '../../components/ui/Button';
 
 export default function CaisseJournaliere() {
   const { token, user } = useAuthStore();
   const [encaissements, setEncaissements] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState(null);
+  const [loadingSession, setLoadingSession] = useState(true);
 
   const fetchEncaissements = async () => {
     setLoading(true);
@@ -16,9 +19,61 @@ export default function CaisseJournaliere() {
     finally { setLoading(false); }
   };
 
+  const fetchSessionStatus = async () => {
+    setLoadingSession(true);
+    try {
+      const res = await fetch('/api/sessions-caisse/statut', { headers: { 'Authorization': `Bearer ${token}` } });
+      const data = await res.json();
+      setSession(data.session);
+    } catch(e) { console.error(e); }
+    finally { setLoadingSession(false); }
+  };
+
   useEffect(() => {
     fetchEncaissements();
+    fetchSessionStatus();
   }, [token]);
+
+  const handleOuvrirCaisse = async () => {
+    const montant = prompt("Montant d'ouverture en caisse (DZD) :", "0");
+    if (montant === null) return;
+    try {
+      const res = await fetch('/api/sessions-caisse/ouvrir', { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ montant_ouverture: parseFloat(montant) || 0 })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        fetchSessionStatus();
+      } else {
+        alert("Erreur: " + data.error);
+      }
+    } catch (e) {
+      alert("Erreur réseau");
+    }
+  };
+
+  const handleCloturerCaisse = async () => {
+    if (!window.confirm("Êtes-vous sûr de vouloir clôturer cette session de caisse ?")) return;
+    try {
+      const res = await fetch('/api/sessions-caisse/cloturer', { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({}) // API computes totals automatically
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert("Session clôturée avec succès.");
+        fetchSessionStatus();
+      } else {
+        alert("Erreur: " + data.error);
+      }
+    } catch (e) {
+      alert("Erreur réseau");
+    }
+  };
+
 
   const stats = (Array.isArray(encaissements) ? encaissements : []).reduce((acc, curr) => {
      acc.total += parseFloat(curr.montant);
@@ -28,9 +83,39 @@ export default function CaisseJournaliere() {
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
-       <div className="mb-8">
-          <h1 className="text-2xl font-bold text-slate-800">Caisse Journalière</h1>
-          <p className="text-slate-500">Supervision des encaissements du jour de l'agent courant.</p>
+       <div className="mb-8 flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800">Caisse Journalière</h1>
+            <p className="text-slate-500">Supervision des encaissements du jour de l'agent courant.</p>
+          </div>
+          <div>
+            {loadingSession ? (
+              <span className="text-slate-500">Chargement session...</span>
+            ) : session ? (
+              <div className="flex items-center gap-4">
+                 <div className="flex flex-col items-end">
+                   <span className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-sm font-bold uppercase tracking-wider flex items-center gap-2">
+                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Session Ouverte
+                   </span>
+                   <span className="text-xs text-slate-500 mt-1">
+                     Montant initial: {(session.montant_ouverture || 0).toLocaleString()} DZD
+                   </span>
+                 </div>
+                 <Button onClick={handleCloturerCaisse} variant="outline" className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300">
+                   Clôturer Session
+                 </Button>
+              </div>
+            ) : (
+              <div className="flex gap-4 items-center">
+                <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-sm font-bold uppercase tracking-wider flex items-center gap-2">
+                   <span className="w-2 h-2 rounded-full bg-slate-400"></span> Session Fermée
+                </span>
+                <Button onClick={handleOuvrirCaisse} className="bg-emerald-600 hover:bg-emerald-700">
+                  Ouvrir Session Caisse
+                </Button>
+              </div>
+            )}
+          </div>
        </div>
 
        <div className="grid grid-cols-4 gap-6 mb-8">
