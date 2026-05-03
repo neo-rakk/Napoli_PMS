@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, useNavigate, NavLink } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
-import { LogOut, Home, CheckSquare, Package, Droplets } from 'lucide-react';
+import { LogOut, Home, CheckSquare, Package, Droplets, Calendar } from 'lucide-react';
 
 export default function HousekeepingLayout() {
   const { user, logout } = useAuthStore();
@@ -39,6 +39,9 @@ export default function HousekeepingLayout() {
         <div className="max-w-5xl mx-auto px-4 flex gap-6 overflow-x-auto">
           <NavLink to="/housekeeping" end className={({isActive}) => `py-3 font-semibold text-sm border-b-2 whitespace-nowrap flex items-center gap-2 ${isActive ? 'border-purple-600 text-purple-700' : 'border-transparent text-slate-500 hover:text-purple-600'}`}>
             <CheckSquare className="w-4 h-4" /> Tâches du Jour
+          </NavLink>
+          <NavLink to="/housekeeping/planning" className={({isActive}) => `py-3 font-semibold text-sm border-b-2 whitespace-nowrap flex items-center gap-2 ${isActive ? 'border-purple-600 text-purple-700' : 'border-transparent text-slate-500 hover:text-purple-600'}`}>
+            <Calendar className="w-4 h-4" /> Planning & Assignation
           </NavLink>
           <NavLink to="/housekeeping/demandes" className={({isActive}) => `py-3 font-semibold text-sm border-b-2 whitespace-nowrap flex items-center gap-2 ${isActive ? 'border-purple-600 text-purple-700' : 'border-transparent text-slate-500 hover:text-purple-600'}`}>
             <Package className="w-4 h-4" /> Demandes Économat

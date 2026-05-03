@@ -5,6 +5,54 @@ const db = require('../db/database.cjs');
 const { requireAuth, requireRole } = require('../middleware/auth.cjs');
 const { logAction } = require('../middleware/auditLogger.cjs');
 
+// GET /api/housekeeping/agents
+router.get('/agents', requireAuth, async (req, res) => {
+  try {
+    const agents = await db.all("SELECT id, nom, prenom FROM agents WHERE role = 'housekeeping' AND actif = 1 ORDER BY nom, prenom");
+    res.json(agents);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// GET /api/housekeeping/planning/today
+router.get('/planning/today', requireAuth, async (req, res) => {
+  try {
+    const { date } = req.query; // format YYYY-MM-DD
+    const targetDate = date || new Date().toISOString().split('T')[0];
+    
+    // Retrieve all rooms with their blocks
+    const chambres = await db.all("SELECT c.*, b.nom as bloc_nom FROM chambres c LEFT JOIN blocs b ON c.bloc_id = b.id ORDER BY b.nom, c.etage, c.numero");
+    
+    // Checkouts of the day
+    const checkouts = await db.all("SELECT chambre_id FROM reservations WHERE statut = 'checkin' AND date_checkout_prevu = $1", [targetDate]);
+    const checkoutSet = new Set(checkouts.map(c => c.chambre_id));
+
+    // checkins / occupied rooms
+    const occupations = await db.all("SELECT chambre_id FROM reservations WHERE statut = 'checkin'");
+    const occupiedSet = new Set(occupations.map(c => c.chambre_id));
+
+    // Existing tasks of the day
+    const taches = await db.all("SELECT * FROM housekeeping WHERE date_affectation = $1", [targetDate]);
+    
+    const result = chambres.map(c => {
+       const isCheckout = checkoutSet.has(c.id);
+       const isOccupied = occupiedSet.has(c.id);
+       const tache = taches.find(t => t.chambre_id === c.id);
+       
+       return {
+         ...c,
+         is_checkout: isCheckout,
+         is_occupied: isOccupied,
+         tache_id: tache ? tache.id : null,
+         tache_type: tache ? tache.type : null,
+         tache_statut: tache ? tache.statut : null,
+         agent_id: tache ? tache.agent_id : null
+       };
+    });
+    
+    res.json(result);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // GET /api/housekeeping — liste tâches avec filtres
 router.get('/', requireAuth, async (req, res) => {
   try {

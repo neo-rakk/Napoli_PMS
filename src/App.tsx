@@ -43,7 +43,10 @@ import MaintenanceDashboard from './pages/maintenance/MaintenanceDashboard';
 import POSLayout from './layouts/POSLayout';
 import POSDashboard from './pages/pos/POSDashboard';
 
+import HousekeepingPlanning from './pages/housekeeping/HousekeepingPlanning';
+
 // Composant placeholder pour les dashboards
+
 const DashboardPlaceholder = ({ title }) => (
   <div className="p-8">
     <h1 className="text-2xl font-bold text-slate-800">{title}</h1>
@@ -105,6 +108,7 @@ export default function App() {
           </ProtectedRoute>
         }>
           <Route index element={<HousekeepingDashboard />} />
+          <Route path="planning" element={<HousekeepingPlanning />} />
           <Route path="demandes" element={<HousekeepingDemandes />} />
           <Route path="buanderie" element={<HousekeepingBuanderie />} />
         </Route>
