@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { Calendar, Download, Plus, Save, User as UserIcon } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 
@@ -9,8 +9,10 @@ export default function HousekeepingPlanning() {
   const { token, user } = useAuthStore();
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [chambres, setChambres] = useState([]);
+  const [visibleChambreIds, setVisibleChambreIds] = useState([]);
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [chambreToAdd, setChambreToAdd] = useState('');
 
   // Local state for assignments: map chambre_id -> { agent_id, type }
   const [assignments, setAssignments] = useState({});
@@ -29,21 +31,26 @@ export default function HousekeepingPlanning() {
       setAgents(dataAgents);
 
       const initialAssign = {};
+      const initialVisible = [];
       dataChambres.forEach(c => {
         if (c.tache_id) {
            initialAssign[c.id] = { agent_id: c.agent_id || '', type: c.tache_type };
+           initialVisible.push(c.id);
         } else {
            // Provide some default suggestions based on status
            let defaultType = '';
-           if (c.is_checkout) defaultType = 'depart';
-           else if (c.is_occupied) defaultType = 'recouche';
-           
+           if (c.is_checkout) {
+               defaultType = 'depart';
+               initialVisible.push(c.id);
+           }
+           // We intentionally do not show non-checkout occupied rooms by default unless they have a task
            if (defaultType) {
               initialAssign[c.id] = { agent_id: '', type: defaultType, isSuggestion: true };
            }
         }
       });
       setAssignments(initialAssign);
+      setVisibleChambreIds(initialVisible);
     } catch (e) {
       console.error(e);
     } finally {
@@ -114,7 +121,7 @@ export default function HousekeepingPlanning() {
     doc.setFontSize(18);
     doc.text(`Planning Général Housekeeping - ${new Date(date).toLocaleDateString('fr-FR')}`, 14, 20);
 
-    const tableData = chambres.map(c => {
+    const tableData = chambres.filter(c => visibleChambreIds.includes(c.id)).map(c => {
        const assign = assignments[c.id];
        let typ = assign?.type || '';
        let agent = '';
@@ -132,7 +139,7 @@ export default function HousekeepingPlanning() {
        ];
     });
 
-    doc.autoTable({
+    autoTable(doc, {
       startY: 30,
       head: [['Bloc', 'Chambre', 'Check-out Aujourd\'hui', 'Type', 'Gouvernante / Agent', 'Notes / Fait']],
       body: tableData,
@@ -155,7 +162,7 @@ export default function HousekeepingPlanning() {
 
     const agentRooms = chambres.filter(c => {
        const assign = assignments[c.id];
-       return assign && assign.agent_id && assign.agent_id.toString() === agentId.toString() && assign.type;
+       return visibleChambreIds.includes(c.id) && assign && assign.agent_id && assign.agent_id.toString() === agentId.toString() && assign.type;
     });
 
     if (agentRooms.length === 0) {
@@ -175,7 +182,7 @@ export default function HousekeepingPlanning() {
        ];
     });
 
-    doc.autoTable({
+    autoTable(doc, {
       startY: 35,
       head: [['Bloc', 'Chambre', 'Statut Chambre', 'Travail Demandé', 'Fait', 'Signature']],
       body: tableData,
@@ -229,7 +236,7 @@ export default function HousekeepingPlanning() {
           <tbody className="divide-y divide-slate-100">
             {loading ? (
                <tr><td colSpan="5" className="text-center py-8">Chargement...</td></tr>
-            ) : chambres.map(c => {
+            ) : chambres.filter(c => visibleChambreIds.includes(c.id)).map(c => {
                const assign = assignments[c.id] || {};
                return (
                  <tr key={c.id} className="hover:bg-slate-50 transition-colors">
@@ -277,6 +284,33 @@ export default function HousekeepingPlanning() {
             })}
           </tbody>
         </table>
+        
+        {/* Ajouter une chambre manuellement */}
+        <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center gap-4">
+           <span className="text-sm font-medium text-slate-700">Ajouter une chambre à la liste :</span>
+           <select 
+             className="border border-slate-300 rounded p-2 text-sm max-w-xs focus:ring-purple-500 focus:border-purple-500"
+             value={chambreToAdd}
+             onChange={e => setChambreToAdd(e.target.value)}
+           >
+             <option value="">Sélectionner une chambre...</option>
+             {chambres.filter(c => !visibleChambreIds.includes(c.id)).map(c => (
+                <option key={c.id} value={c.id}>{c.bloc_nom} - Ch. {c.numero} {c.is_occupied ? '(Occupée)' : ''}</option>
+             ))}
+           </select>
+           <Button 
+             variant="outline" 
+             onClick={() => {
+                if (chambreToAdd && !visibleChambreIds.includes(parseInt(chambreToAdd))) {
+                   setVisibleChambreIds([...visibleChambreIds, parseInt(chambreToAdd)]);
+                   setChambreToAdd('');
+                }
+             }}
+             disabled={!chambreToAdd}
+           >
+             <Plus className="w-4 h-4 mr-1" /> Ajouter
+           </Button>
+        </div>
       </div>
 
       <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mt-8">
