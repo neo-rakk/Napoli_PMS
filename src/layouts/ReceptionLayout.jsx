@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Outlet, Navigate, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useStatsStore } from '../store/statsStore';
-import { Users, UserPlus, CheckCircle, Group, Calendar, Grid, BookOpen, Clock, Settings, LogOut, CheckSquare, Menu } from 'lucide-react';
+import { Users, UserPlus, CheckCircle, Group, Calendar, Grid, BookOpen, Clock, Settings, LogOut, CheckSquare, Menu, AlertCircle } from 'lucide-react';
+import PendingPaymentsModal from '../components/PendingPaymentsModal';
 
 export default function ReceptionLayout() {
   const { user, token, logout } = useAuthStore();
@@ -10,6 +11,7 @@ export default function ReceptionLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isPendingPaymentsModalOpen, setIsPendingPaymentsModalOpen] = useState(false);
 
   useEffect(() => {
     let timeout;
@@ -189,6 +191,15 @@ export default function ReceptionLayout() {
               <div className={`flex items-center px-2 sm:px-3 py-1 rounded-full shadow-sm font-black shrink-0 ${getTauxBadgeClass(stats?.chambres?.tauxOccupation || 0)}`}>
                 Taux: {stats?.chambres?.tauxOccupation || 0}%
               </div>
+
+              <button 
+                 onClick={() => setIsPendingPaymentsModalOpen(true)}
+                 className="flex items-center text-red-700 bg-red-100 hover:bg-red-200 transition-colors px-3 py-1 rounded-full border border-red-200 shrink-0 shadow-sm ml-2"
+                 title="Reste à percevoir"
+              >
+                <AlertCircle className="w-3.5 h-3.5 mr-1.5" />
+                <span className="font-bold text-xs">Impayés</span>
+              </button>
             </div>
             
             <div className="hidden xl:flex space-x-4 text-[10px] font-black uppercase tracking-widest text-slate-400 border-l pl-6 shrink-0 items-center">
@@ -211,6 +222,11 @@ export default function ReceptionLayout() {
           <Outlet />
         </div>
       </main>
+
+      <PendingPaymentsModal 
+        isOpen={isPendingPaymentsModalOpen} 
+        onClose={() => setIsPendingPaymentsModalOpen(false)} 
+      />
     </div>
   );
 }

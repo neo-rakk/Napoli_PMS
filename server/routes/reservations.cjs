@@ -415,4 +415,47 @@ router.post('/:id/checkout-anticipe', requireAuth, requireRole('accueil', 'admin
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// POST /api/reservations/:id/cancel-checkin
+router.post('/:id/cancel-checkin', requireAuth, requireRole('admin'), async (req, res) => {
+  try {
+    await db.transaction(async (client) => {
+      const resData = await client.query("SELECT * FROM reservations WHERE id = $1", [req.params.id]);
+      const reservation = resData.rows[0];
+      if (!reservation) throw new Error('Réservation introuvable');
+      
+      await client.query(`
+        UPDATE reservations SET statut = 'checkout', date_depart = NOW(),
+          agent_checkout_id = $1, est_checkout_anticipe = 1, motif_checkout_anticipe = 'Clôturé par Administrateur (Impayé / Échappé)'
+        WHERE id = $2
+      `, [req.agent.id, req.params.id]);
+
+      await client.query("UPDATE clients SET statut = 'checkout' WHERE id = $1", [reservation.client_id]);
+
+      const chambreRes = await client.query("SELECT * FROM chambres WHERE id = $1", [reservation.chambre_id]);
+      const room = chambreRes.rows[0];
+      const newOcc = Math.max(0, room.nb_occupants_actuels - 1);
+
+      if (!['travaux', 'bloquee', 'stock_etage'].includes(room.statut)) {
+        const newStatut = newOcc === 0 ? 'libre' : newOcc < room.capacite_max ? 'partielle' : 'occupee';
+        await client.query("UPDATE chambres SET nb_occupants_actuels=$1, statut=$2 WHERE id=$3", [newOcc, newStatut, room.id]);
+      } else {
+        await client.query("UPDATE chambres SET nb_occupants_actuels=$1 WHERE id=$2", [newOcc, room.id]);
+      }
+
+      if (newOcc === 0) {
+        await client.query(`
+          INSERT INTO housekeeping (chambre_id, bloc_id, etage, date_affectation, type, statut, priorite)
+          VALUES ($1, $2, $3, CURRENT_DATE, 'depart', 'a_faire', 'urgente')
+        `, [room.id, room.bloc_id, room.etage]);
+      }
+      
+      const { logAction } = require('../middleware/auditLogger.cjs');
+      await logAction(req.agent.id, 'CANCEL_CHECKIN_ADMIN', 'reservations', req.params.id, {}, req.ip);
+    });
+    res.json({ success: true });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 module.exports = router;
