@@ -2,6 +2,39 @@ import { jsPDF } from 'jspdf';
 import QRCode from 'qrcode';
 import 'jspdf-autotable';
 
+const formatNumber = (num) => {
+  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+};
+
+// Converts text (e.g. Arabic) into an image using canvas to ensure correct text-shaping and RTL
+const textToImage = (text, width, height, font, color = '#000000', align = 'center', lineHeight = 1.2) => {
+  const canvas = document.createElement('canvas');
+  const scale = 4; // High resolution
+  canvas.width = width * scale;
+  canvas.height = height * scale;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(scale, scale);
+  ctx.fillStyle = color;
+  ctx.font = font;
+  ctx.textAlign = align;
+  ctx.textBaseline = 'middle';
+  const x = align === 'center' ? width / 2 : (align === 'right' ? width : 0);
+  
+  const fontSizeMatch = font.match(/(\d+)px/);
+  const fontSize = fontSizeMatch ? parseInt(fontSizeMatch[1]) : 12;
+  
+  const lines = text.split('\n');
+  const totalHeight = lines.length * fontSize * lineHeight;
+  let startY = (height - totalHeight) / 2 + (fontSize / 2);
+  
+  lines.forEach((line) => {
+    ctx.fillText(line, x, startY);
+    startY += fontSize * lineHeight;
+  });
+  
+  return canvas.toDataURL('image/png');
+};
+
 export const generateBadgePDF = async (client, chambreNum, formule, dateDepart) => {
   const doc = new jsPDF('p', 'mm', [85.6, 54]); // CR-80 card size landscape, or 85.6x54 is portrait if we flip width/height. Wait, "p" is portrait. 54x85.6.
   // Actually standard CR80 is 54mm x 86mm (portrait).
@@ -30,11 +63,9 @@ export const generateBadgePDF = async (client, chambreNum, formule, dateDepart) 
   }
 
   // Name
-  pdf.setTextColor(15, 23, 42); // slate-900
-  pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(12);
   const nameText = `${client.nom}\n${client.prenom}`.toUpperCase();
-  pdf.text(nameText, 27, cursorY, { align: 'center' });
+  const nameImg = textToImage(nameText, 50, 15, "bold 14px sans-serif", "#0f172a", "center");
+  pdf.addImage(nameImg, 'PNG', 2, cursorY - 5, 50, 15);
   cursorY += 10;
 
   if (client.est_mineur === 1) {
@@ -108,7 +139,10 @@ export const generateReceiptPDF = (client, reservationInfo) => {
   pdf.text('VILLAGE OLYMPIQUE NAPOLI 2026', 105, 26, { align: 'center' });
   
   pdf.setTextColor(0, 0, 0);
-  pdf.text(`Client : ${client.nom} ${client.prenom}`, 20, 40);
+  const clientNameText = `Client : ${client.nom} ${client.prenom}`;
+  const clientNameImg = textToImage(clientNameText, 170, 8, "12px sans-serif", "#000000", "left");
+  pdf.addImage(clientNameImg, 'PNG', 20, 35, 170, 8);
+  
   pdf.text(`ID : ${client.est_etranger ? client.num_piece : client.nin}`, 20, 46);
   
   pdf.text(`Date : ${new Date().toLocaleDateString('fr-FR')}`, 190, 40, { align: 'right' });
@@ -121,13 +155,13 @@ export const generateReceiptPDF = (client, reservationInfo) => {
     if (reservationInfo.total_nuit > 0) {
       tableData.push([
         `Hébergement (${reservationInfo.nuits} nuit(s) - Chambre ${reservationInfo.chambreNum || reservationInfo.chambre})`,
-        `${(reservationInfo.total_nuit).toLocaleString()} DZD`
+        `${formatNumber(reservationInfo.total_nuit)} DZD`
       ]);
     }
     if (reservationInfo.total_repas > 0) {
       tableData.push([
         `Restauration (Formule ${reservationInfo.formule || 'N/A'} - ${reservationInfo.nuits} jour(s))`,
-        `${(reservationInfo.total_repas).toLocaleString()} DZD`
+        `${formatNumber(reservationInfo.total_repas)} DZD`
       ]);
     }
   }
@@ -146,13 +180,13 @@ export const generateReceiptPDF = (client, reservationInfo) => {
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(12);
   pdf.text('TOTAL A PAYER', 130, finalY);
-  pdf.text(`${(reservationInfo.total || reservationInfo.total_theorique).toLocaleString()} DZD`, 190, finalY, { align: 'right' });
+  pdf.text(`${formatNumber(reservationInfo.total || reservationInfo.total_theorique)} DZD`, 190, finalY, { align: 'right' });
   
   if (reservationInfo.montant_encaisse !== undefined) {
     finalY += 8;
     pdf.setTextColor(4, 120, 87); // emerald-700
     pdf.text('MONTANT ENCAISSÉ', 130, finalY);
-    pdf.text(`${(reservationInfo.montant_encaisse || 0).toLocaleString()} DZD`, 190, finalY, { align: 'right' });
+    pdf.text(`${formatNumber(reservationInfo.montant_encaisse || 0)} DZD`, 190, finalY, { align: 'right' });
     
     finalY += 8;
     const reste = (reservationInfo.total || reservationInfo.total_theorique) - (reservationInfo.montant_encaisse || 0);
@@ -162,7 +196,7 @@ export const generateReceiptPDF = (client, reservationInfo) => {
       pdf.setTextColor(0, 0, 0); 
     }
     pdf.text('RESTE A PAYER', 130, finalY);
-    pdf.text(`${reste.toLocaleString()} DZD`, 190, finalY, { align: 'right' });
+    pdf.text(`${formatNumber(reste)} DZD`, 190, finalY, { align: 'right' });
   }
 
   pdf.save(`Recu_${client.nom}_Ch${reservationInfo.chambreNum || reservationInfo.chambre}.pdf`);
