@@ -1,12 +1,33 @@
-import React, { useState } from 'react';
-import { Outlet, NavLink, useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Outlet, NavLink, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
-import { LayoutDashboard, Users, UserCog, Building, DollarSign, Settings, LogOut, PackageSearch, TrendingUp, BadgeDollarSign, Coffee, ShieldCheck, Home, Wrench, Menu } from 'lucide-react';
+import { LayoutDashboard, Users, UserCog, Building, DollarSign, Settings, LogOut, PackageSearch, TrendingUp, BadgeDollarSign, Coffee, ShieldCheck, Home, Wrench, Menu, Bell } from 'lucide-react';
 
 export default function AdminLayout() {
-  const { user, logout } = useAuthStore();
+  const { user, logout, token } = useAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [stockNotifCount, setStockNotifCount] = useState(0);
+
+  useEffect(() => {
+    const fetchNotifs = async () => {
+      try {
+        const res = await fetch('/api/stocks/notifications', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setStockNotifCount(data.count);
+        }
+      } catch (e) {
+        console.error("Error fetching notifications", e);
+      }
+    };
+    fetchNotifs();
+    const interval = setInterval(fetchNotifs, 10000); // 10 seconds
+    return () => clearInterval(interval);
+  }, [token]);
 
   const handleLogout = () => {
     logout();
@@ -79,27 +100,43 @@ export default function AdminLayout() {
             Gestion
           </div>
           <nav className="py-2 flex flex-col gap-1 px-2">
-            {menuItems.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                end={item.exact}
-                title={item.name}
-                onClick={() => setIsSidebarOpen(false)}
-                className={({ isActive }) =>
-                  `flex items-center rounded-lg transition-colors overflow-hidden whitespace-nowrap ${
-                    isSidebarOpen ? 'px-4 py-2 text-sm font-medium' : 'p-3 justify-center text-xs'
-                  } ${
-                    isActive ? 'bg-emerald-600 text-white' : 'hover:bg-slate-800 text-slate-300'
-                  }`
-                }
-              >
-                <item.icon className={`w-5 h-5 shrink-0 ${isSidebarOpen ? 'mr-3' : ''}`} />
-                <span className={`transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 hidden'}`}>
-                  {item.name}
-                </span>
-              </NavLink>
-            ))}
+            {menuItems.map((item) => {
+              const isActiveRoute = location.pathname.startsWith(item.path) && (item.exact ? location.pathname === item.path : true);
+              const showBadge = item.path === '/admin/stocks' && stockNotifCount > 0;
+              return (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  end={item.exact}
+                  title={item.name}
+                  onClick={() => setIsSidebarOpen(false)}
+                  className={({ isActive }) =>
+                    `relative flex items-center rounded-lg transition-colors overflow-hidden whitespace-nowrap ${
+                      isSidebarOpen ? 'px-4 py-2 text-sm font-medium' : 'p-3 justify-center text-xs'
+                    } ${
+                      isActive || isActiveRoute ? 'bg-emerald-600 text-white' : 'hover:bg-slate-800 text-slate-300'
+                    }`
+                  }
+                >
+                  <div className="relative">
+                    <item.icon className={`w-5 h-5 shrink-0 ${isSidebarOpen ? 'mr-3' : ''}`} />
+                    {showBadge && (
+                      <span className={`absolute ${isSidebarOpen ? '-top-1 -right-1' : '-top-1 -right-1'} flex items-center justify-center w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full border-2 border-slate-900 shadow-sm animate-pulse`}>
+                        {stockNotifCount > 99 ? '99+' : stockNotifCount}
+                      </span>
+                    )}
+                  </div>
+                  <span className={`transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100 flex-1' : 'opacity-0 hidden'}`}>
+                    {item.name}
+                  </span>
+                  {showBadge && isSidebarOpen && (
+                    <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full ml-auto animate-pulse shadow-sm">
+                      {stockNotifCount} nvx
+                    </span>
+                  )}
+                </NavLink>
+              );
+            })}
           </nav>
 
           <div className={`px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mt-4 border-t border-slate-800 whitespace-nowrap ${!isSidebarOpen && 'hidden'}`}>

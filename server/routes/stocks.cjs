@@ -118,6 +118,15 @@ router.get('/:id/mouvements', requireAuth, async (req, res) => {
 });
 
 // Demandes de maintenance
+router.get('/notifications', requireAuth, requireRole('admin'), async (req, res) => {
+  try {
+    const row = await db.get(`SELECT COUNT(*) as count FROM maintenance_pieces_demandees WHERE statut = 'en_attente'`);
+    res.json({ count: row.count || 0 });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 router.get('/demandes-maintenance', requireAuth, requireRole('admin'), async (req, res) => {
   try {
     const demandes = await db.all(`
