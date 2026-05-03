@@ -13,16 +13,21 @@ export default function AdminStock() {
 
   // Modals
   const [showCreate, setShowCreate] = useState(false);
+  const [showEditArticle, setShowEditArticle] = useState(false);
+  const [showEditDemande, setShowEditDemande] = useState(false);
+  const [showAchatDirect, setShowAchatDirect] = useState(false);
   const [showMvt, setShowMvt] = useState(false);
   const [showBonAchat, setShowBonAchat] = useState(false);
   const [showReception, setShowReception] = useState(null); // stores the demande object
   const [quantiteRecue, setQuantiteRecue] = useState(1);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null);
   const [selectedArticle, setSelectedArticle] = useState(null);
+  const [selectedDemandeToEdit, setSelectedDemandeToEdit] = useState(null);
 
   // Selection for PO
   const [selectedDemandes, setSelectedDemandes] = useState([]);
   const [quantitesCommande, setQuantitesCommande] = useState({});
+  const [directItems, setDirectItems] = useState([{ designation: '', quantite: 1 }]);
 
   // Forms
   const [form, setForm] = useState({ nom: '', categorie: 'economat', seuil_alerte: 5, unite: 'Unités', description: '' });
@@ -56,6 +61,54 @@ export default function AdminStock() {
       if(res.ok) {
         setShowCreate(false);
         setForm({ nom: '', categorie: 'economat', seuil_alerte: 5, unite: 'Unités', description: '' });
+        fetchData();
+      }
+    } catch(e) {}
+  };
+
+  const handleEditArticle = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(`/api/stocks/${selectedArticle.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(form)
+      });
+      if(res.ok) {
+        setShowEditArticle(false);
+        setSelectedArticle(null);
+        fetchData();
+      }
+    } catch(e) {}
+  };
+
+  const handleEditDemande = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(`/api/stocks/demandes-maintenance/${selectedDemandeToEdit.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ designation: selectedDemandeToEdit.designation, quantite: selectedDemandeToEdit.quantite })
+      });
+      if(res.ok) {
+        setShowEditDemande(false);
+        setSelectedDemandeToEdit(null);
+        fetchData();
+      }
+    } catch(e) {}
+  };
+
+  const handleCreateAchatDirect = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/stocks/demandes-maintenance/direct', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ articles: directItems.filter(i => i.designation.trim() !== '') })
+      });
+      if(res.ok) {
+        setShowAchatDirect(false);
+        setDirectItems([{ designation: '', quantite: 1 }]);
         fetchData();
       }
     } catch(e) {}
@@ -143,7 +196,7 @@ export default function AdminStock() {
       item.designation,
       item.reference || '-',
       item.orderQuantite,
-      `Ch: ${item.chambre_numero} / Urgence: ${item.urgence}`
+      item.chambre_numero ? `Ch: ${item.chambre_numero} / Urgence: ${item.urgence}` : 'Achat Direct'
     ]);
 
     autoTable(doc, {
@@ -242,6 +295,9 @@ export default function AdminStock() {
            <Button onClick={() => setShowCreate(true)} className="bg-emerald-600 hover:bg-emerald-700">
               <PlusCircle className="w-4 h-4 mr-2" /> Nouvel Article
            </Button>
+           <Button onClick={() => setShowAchatDirect(true)} className="bg-blue-600 hover:bg-blue-700">
+              <PlusCircle className="w-4 h-4 mr-2" /> Commande Directe
+           </Button>
         </div>
       </div>
 
@@ -254,6 +310,7 @@ export default function AdminStock() {
               <div className="flex justify-between items-start mb-2">
                  <span className="px-2 py-1 text-xs font-bold uppercase rounded bg-slate-100 text-slate-600">{a.categorie}</span>
                  {a.quantite_actuelle <= a.seuil_alerte && <AlertTriangle className="w-5 h-5 text-red-500" title="Stock d'alerte atteint" />}
+                 <Button variant="ghost" size="sm" onClick={() => { setSelectedArticle(a); setForm(a); setShowEditArticle(true); }} className="text-slate-400 hover:text-indigo-600 p-1 h-auto ml-auto mr-1">✏️</Button>
               </div>
               <h3 className="font-bold text-lg text-slate-800 mb-1">{a.nom}</h3>
               <p className="text-xs text-slate-500 mb-4 h-8 overflow-hidden">{a.description || 'Aucune description'}</p>
@@ -337,7 +394,7 @@ export default function AdminStock() {
                   <div className="text-xs text-slate-500">{d.reference ? `Réf: ${d.reference}` : 'Sans référence'}</div>
                 </td>
                 <td className="px-6 py-4">
-                  <div className="font-medium text-slate-800">Chambre {d.chambre_numero}</div>
+                  <div className="font-medium text-slate-800">{d.chambre_numero ? `Chambre ${d.chambre_numero}` : 'Achat Direct'}</div>
                   <div className={`text-xs uppercase font-bold mt-1 ${d.urgence === 'immediate' ? 'text-red-500' : 'text-amber-500'}`}>
                     Urgence {d.urgence}
                   </div>
@@ -356,9 +413,12 @@ export default function AdminStock() {
                     {d.statut}
                   </span>
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-6 py-4 flex flex-col gap-2">
+                  {d.statut === 'en_attente' && (
+                    <Button variant="ghost" size="sm" onClick={() => { setSelectedDemandeToEdit(d); setShowEditDemande(true); }} className="text-slate-400 hover:text-indigo-600 p-1 h-auto text-xs flex justify-start">✏️ Modifier</Button>
+                  )}
                   {d.statut === 'commande' && (
-                    <Button size="sm" variant="outline" className="text-xs py-1 h-8 border-emerald-200 text-emerald-700 hover:bg-emerald-50" 
+                    <Button size="sm" variant="outline" className="text-xs py-1 h-8 border-emerald-200 text-emerald-700 hover:bg-emerald-50 w-full" 
                        onClick={() => { setShowReception(d); setQuantiteRecue(d.quantite_commandee || d.quantite); }}>
                        <CheckCircle className="w-3 h-3 mr-1" /> Recevoir
                     </Button>
@@ -434,6 +494,112 @@ export default function AdminStock() {
                    Générer & Télécharger PDF
                 </Button>
               </div>
+           </div>
+         </div>
+      )}
+
+      {showEditArticle && selectedArticle && (
+         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+              <h2 className="text-xl font-bold mb-4">Modifier Article</h2>
+              <form onSubmit={handleEditArticle} className="space-y-4">
+                 <div>
+                   <label className="block text-sm font-medium mb-1">Désignation *</label>
+                   <input required type="text" className="w-full border rounded-md p-2" value={form.nom} onChange={e=>setForm({...form, nom: e.target.value})} />
+                 </div>
+                 <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Catégorie</label>
+                      <select className="w-full border rounded-md p-2" value={form.categorie} onChange={e=>setForm({...form, categorie: e.target.value})}>
+                          <option value="economat">Économat Général</option>
+                          <option value="housekeeping">Produits Housekeeping</option>
+                          <option value="maintenance">Pièces Maintenance</option>
+                          <option value="pos">Articles POS (Boissons...)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Unité</label>
+                      <input type="text" className="w-full border rounded-md p-2" value={form.unite} onChange={e=>setForm({...form, unite: e.target.value})} />
+                    </div>
+                 </div>
+                 <div>
+                   <label className="block text-sm font-medium mb-1">Seuil d'alerte</label>
+                   <input required type="number" min="0" className="w-full border rounded-md p-2" value={form.seuil_alerte} onChange={e=>setForm({...form, seuil_alerte: parseFloat(e.target.value)})} />
+                 </div>
+                 <div>
+                   <label className="block text-sm font-medium mb-1">Description</label>
+                   <textarea rows="2" className="w-full border rounded-md p-2" value={form.description} onChange={e=>setForm({...form, description: e.target.value})}></textarea>
+                 </div>
+                 <div className="pt-4 flex justify-end gap-3 mt-4">
+                   <Button variant="outline" type="button" onClick={() => setShowEditArticle(false)}>Annuler</Button>
+                   <Button type="submit">Enregistrer</Button>
+                 </div>
+              </form>
+           </div>
+         </div>
+      )}
+
+      {showEditDemande && selectedDemandeToEdit && (
+         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+           <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6">
+              <h2 className="text-xl font-bold mb-4">Modifier Pièce Demandée</h2>
+              <form onSubmit={handleEditDemande} className="space-y-4">
+                 <div>
+                   <label className="block text-sm font-medium mb-1">Désignation Exacte *</label>
+                   <input required type="text" className="w-full border rounded-md p-2" value={selectedDemandeToEdit.designation} onChange={e=>setSelectedDemandeToEdit({...selectedDemandeToEdit, designation: e.target.value})} />
+                   <p className="text-xs text-slate-400 mt-1">Sera utilisé pour créer/mettre à jour l'article complet lors de la réception.</p>
+                 </div>
+                 <div>
+                   <label className="block text-sm font-medium mb-1">Quantité Demandée par le Tech.</label>
+                   <input required type="number" min="1" className="w-full border rounded-md p-2" value={selectedDemandeToEdit.quantite} onChange={e=>setSelectedDemandeToEdit({...selectedDemandeToEdit, quantite: parseInt(e.target.value)})} />
+                 </div>
+                 <div className="pt-4 flex justify-end gap-3 mt-4 border-t border-slate-100">
+                   <Button variant="outline" type="button" onClick={() => setShowEditDemande(false)}>Annuler</Button>
+                   <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700">Enregistrer</Button>
+                 </div>
+              </form>
+           </div>
+         </div>
+      )}
+
+      {showAchatDirect && (
+         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+           <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6">
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                 <PackageSearch className="w-5 h-5 text-blue-600" /> Nouvelle Commande Directe
+              </h2>
+              <p className="text-sm text-slate-500 mb-6">Ajoutez des articles génériques à commander pour l'économat. Ils apparaîtront en attente de Bon d'Achat dans la liste.</p>
+              
+              <form onSubmit={handleCreateAchatDirect} className="space-y-4">
+                 {directItems.map((item, idx) => (
+                    <div key={idx} className="flex gap-2 items-center">
+                       <div className="flex-1">
+                          <input required type="text" placeholder={`Article ${idx+1}`} className="w-full border rounded-md p-2" value={item.designation} onChange={e => {
+                             const n = [...directItems]; n[idx].designation = e.target.value; setDirectItems(n);
+                          }} />
+                       </div>
+                       <div className="w-24">
+                          <input required type="number" min="1" placeholder="Qté" className="w-full border rounded-md p-2" value={item.quantite} onChange={e => {
+                             const n = [...directItems]; n[idx].quantite = parseInt(e.target.value); setDirectItems(n);
+                          }} />
+                       </div>
+                       <Button type="button" variant="ghost" size="sm" onClick={() => {
+                          if (directItems.length > 1) {
+                             const n = [...directItems]; n.splice(idx, 1); setDirectItems(n);
+                          }
+                       }} className="text-red-500">X</Button>
+                    </div>
+                 ))}
+                 
+                 <Button type="button" variant="outline" size="sm" onClick={() => setDirectItems([...directItems, { designation: '', quantite: 1 }])}>
+                    + Ajouter une ligne
+                 </Button>
+                 
+                 <div className="pt-4 flex justify-end gap-3 mt-4 border-t border-slate-100">
+                   <Button variant="outline" type="button" onClick={() => setShowAchatDirect(false)}>Annuler</Button>
+                   <Button type="submit" className="bg-blue-600 hover:bg-blue-700">Valider la commande</Button>
+                 </div>
+              </form>
            </div>
          </div>
       )}

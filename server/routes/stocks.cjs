@@ -59,6 +59,21 @@ router.post('/', requireAuth, requireRole('admin'), async (req, res) => {
   }
 });
 
+// Mettre à jour un article
+router.put('/:id', requireAuth, requireRole('admin'), async (req, res) => {
+  try {
+    const { nom, categorie, seuil_alerte, unite, description } = req.body;
+    await db.query(`
+      UPDATE stock_articles 
+      SET nom = $1, categorie = $2, seuil_alerte = $3, unite = $4, description = $5 
+      WHERE id = $6
+    `, [nom, categorie, seuil_alerte, unite, description, req.params.id]);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // Mouvement de stock
 router.post('/:id/mouvements', requireAuth, requireRole('admin', 'housekeeping', 'maintenance', 'pos'), async (req, res) => {
   try {
@@ -121,6 +136,34 @@ router.get('/demandes-maintenance', requireAuth, requireRole('admin'), async (re
   }
 });
 
+router.put('/demandes-maintenance/:id', requireAuth, requireRole('admin'), async (req, res) => {
+  try {
+    const { designation, quantite } = req.body;
+    await db.query(`UPDATE maintenance_pieces_demandees SET designation = $1, quantite = $2 WHERE id = $3`, [designation, quantite, req.params.id]);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.post('/demandes-maintenance/direct', requireAuth, requireRole('admin'), async (req, res) => {
+  try {
+    const { articles } = req.body; // Array { designation, quantite }
+    await db.transaction(async (client) => {
+      for (const article of articles) {
+        await client.query(`
+          INSERT INTO maintenance_pieces_demandees 
+          (agent_id, designation, quantite, statut, urgence)
+          VALUES ($1, $2, $3, 'en_attente', 'normale')
+        `, [req.agent.id, article.designation, article.quantite]);
+      }
+    });
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 router.post('/demandes-maintenance/:id/statut', requireAuth, requireRole('admin'), async (req, res) => {
   try {
     const { statut } = req.body;
@@ -167,15 +210,17 @@ router.post('/demandes-maintenance/:id/recevoir', requireAuth, requireRole('admi
       const qteDemandee = demande.quantite || 1;
       // We calculate extra based on the difference between received and genuinely requested by the technician.
       // If the admin received more than what was initially requested, the extra goes to stock.
-      const qteExtra = quantite_recue > qteDemandee ? quantite_recue - qteDemandee : 0;
+      // If it's a direct purchase (no maintenance_id), ALL of it goes to stock.
+      const isDirectPurchase = !demande.maintenance_id;
+      const qteExtra = isDirectPurchase ? quantite_recue : (quantite_recue > qteDemandee ? quantite_recue - qteDemandee : 0);
 
       // 2. Mark as mis_a_disposition
       await client.query(`UPDATE maintenance_pieces_demandees SET statut = 'mis_a_disposition' WHERE id = $1`, [req.params.id]);
 
       // 3. If there's extra, try to save/update it in stock_articles
       if (qteExtra > 0) {
-        // Look for an existing article with exact same name in maintenance
-        const existingArticle = await client.query(`SELECT id FROM stock_articles WHERE nom = $1 AND categorie = 'maintenance'`, [demande.designation]);
+        // Look for an existing article with exact same name in maintenance or economat
+        const existingArticle = await client.query(`SELECT id FROM stock_articles WHERE nom = $1`, [demande.designation]);
         let articleId;
 
         if (existingArticle.rows.length > 0) {
@@ -184,16 +229,17 @@ router.post('/demandes-maintenance/:id/recevoir', requireAuth, requireRole('admi
         } else {
            const insertRes = await client.query(`
              INSERT INTO stock_articles (nom, categorie, quantite_actuelle, seuil_alerte, unite)
-             VALUES ($1, 'maintenance', $2, 2, 'Unités') RETURNING id
-           `, [demande.designation, qteExtra]);
+             VALUES ($1, $2, $3, 2, 'Unités') RETURNING id
+           `, [demande.designation, isDirectPurchase ? 'economat' : 'maintenance', qteExtra]);
            articleId = insertRes.rows[0].id;
         }
 
         // Add a movement history
+        const refMvt = isDirectPurchase ? 'Achat Direct Économat' : `Surplus Achat Maintenance (Ticket #${demande.maintenance_id})`;
         await client.query(`
            INSERT INTO stock_mouvements (article_id, agent_id, type_mouvement, quantite, reference)
            VALUES ($1, $2, 'entree', $3, $4)
-        `, [articleId, req.agent.id, qteExtra, `Surplus Achat Maintenance (Ticket #${demande.maintenance_id})`]);
+        `, [articleId, req.agent.id, qteExtra, refMvt]);
       }
     });
 

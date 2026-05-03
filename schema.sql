@@ -329,7 +329,7 @@ CREATE TABLE IF NOT EXISTS maintenance (
 
 CREATE TABLE IF NOT EXISTS maintenance_pieces_demandees (
   id             BIGSERIAL PRIMARY KEY,
-  maintenance_id BIGINT NOT NULL REFERENCES maintenance(id),
+  maintenance_id BIGINT REFERENCES maintenance(id),
   agent_id       BIGINT REFERENCES agents(id),
   designation    TEXT NOT NULL,
   reference      TEXT,
