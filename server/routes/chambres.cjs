@@ -77,4 +77,33 @@ router.post('/', requireAuth, requireRole('admin'), async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+router.put('/bulk-update', requireAuth, requireRole('admin'), async (req, res) => {
+  try {
+    const { roomIds, updates } = req.body;
+    if (!roomIds || !roomIds.length || !updates) {
+       return res.status(400).json({ error: 'roomIds (array) and updates (object) required' });
+    }
+    
+    await db.transaction(async (client) => {
+      for (const roomId of roomIds) {
+         const setCols = [];
+         const args = [];
+         let argIdx = 1;
+
+         if (updates.type) { setCols.push(`type=$${argIdx++}`); args.push(updates.type); }
+         if (updates.capacite_max !== undefined) { setCols.push(`capacite_max=$${argIdx++}`); args.push(updates.capacite_max); }
+         
+         if (setCols.length > 0) {
+           args.push(roomId);
+           await client.query(`UPDATE chambres SET ${setCols.join(', ')} WHERE id=$${argIdx}`, args);
+         }
+      }
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

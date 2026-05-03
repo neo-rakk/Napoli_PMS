@@ -118,6 +118,26 @@ const db = require('./db/database.cjs');
   } catch (err) {
     console.error('[Schema Error]', err);
   }
+
+  try {
+    // Modify chambres table constraints safely so we can use new types
+    await db.query(`
+      DO $$
+      DECLARE r RECORD;
+      BEGIN
+          FOR r IN (
+              SELECT conname
+              FROM pg_constraint
+              WHERE conrelid = 'chambres'::regclass AND contype = 'c' AND pg_get_constraintdef(oid) ILIKE '%type%'
+          ) LOOP
+              EXECUTE 'ALTER TABLE chambres DROP CONSTRAINT ' || r.conname;
+          END LOOP;
+      END $$;
+    `);
+    // Add default types back but include custom ones
+  } catch(e) {
+    console.error('[Schema constraint update error]', e);
+  }
 })();
 
 const distPath = path.join(__dirname, '../dist');
