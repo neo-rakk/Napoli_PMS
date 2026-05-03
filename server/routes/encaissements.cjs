@@ -142,6 +142,37 @@ router.delete('/:id', requireAuth, requireRole('admin'), async (req, res) => {
 });
 
 // Route /pay conservée pour compatibilité POS
+router.post('/refund', requireAuth, async (req, res) => {
+  const { reservation_id, montant, methode } = req.body;
+  if (!reservation_id || !montant) return res.status(400).json({ error: 'Données invalides' });
+  try {
+    const sessionRes = await db.query("SELECT id FROM sessions_caisse WHERE agent_id = $1 AND statut = 'ouverte'", [req.agent.id]);
+    const session = sessionRes.rows[0];
+    if (!session) return res.status(400).json({ error: "Aucune session de caisse ouverte." });
+    
+    const resData = await db.query("SELECT client_id, formule FROM reservations WHERE id = $1", [reservation_id]);
+    const reservation = resData.rows[0];
+    
+    const typeP = methode === 'cash' ? 'especes' : 'carte';
+    const amount = -Math.abs(montant);
+    const result = await db.query(
+      "INSERT INTO encaissements (reservation_id, client_id, agent_id, session_caisse_id, montant, type_paiement, formule, description) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
+      [reservation_id, reservation?.client_id, req.agent.id, session.id, amount, typeP, reservation?.formule || 'N/A', 'Remboursement (Check-Out Anticipé)']
+    );
+    
+    // Update session_caisse totals
+    const colMap = {
+      'especes': 'total_especes',
+      'virement': 'total_virement',
+      'cheque': 'total_cheques'
+    };
+    const col = colMap[typeP] || 'total_especes';
+    await db.query(`UPDATE sessions_caisse SET ${col} = COALESCE(${col},0) + $1, total_general = COALESCE(total_general,0) + $1 WHERE id = $2`, [amount, session.id]);
+
+    res.json({ success: true, id: result.rows[0].id });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 router.post('/pay', requireAuth, async (req, res) => {
   const { reservation_id, montant, methode } = req.body;
   if (!reservation_id || !montant) return res.status(400).json({ error: 'Données invalides' });

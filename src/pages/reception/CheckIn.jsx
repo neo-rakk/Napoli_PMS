@@ -508,8 +508,30 @@ export default function CheckIn() {
              </div>
              
              <div className="flex justify-center gap-4">
-                <Button onClick={() => window.print()} variant="primary" size="lg">
-                  <Printer className="w-5 h-5 mr-2" /> Imprimer le Badge / Reçu
+                <Button onClick={() => {
+                  const printContent = document.getElementById('print-area');
+                  if(!printContent) return;
+                  printContent.style.visibility = 'visible';
+                  const originalDisplay = printContent.style.display;
+                  printContent.style.display = 'block';
+                  
+                  import('html2canvas').then(({default: html2canvas}) => {
+                     import('jspdf').then(({jsPDF}) => {
+                        html2canvas(printContent, { scale: 2 }).then(canvas => {
+                           const imgData = canvas.toDataURL('image/png');
+                           const pdf = new jsPDF('p', 'mm', 'a4');
+                           const pdfWidth = pdf.internal.pageSize.getWidth();
+                           const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+                           pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                           pdf.save(`CheckIn_${selectedClient.nom}_Ch${successData.chambreNum}.pdf`);
+                           
+                           printContent.style.visibility = 'hidden';
+                           printContent.style.display = originalDisplay;
+                        });
+                     });
+                  });
+                }} variant="primary" size="lg">
+                  <Printer className="w-5 h-5 mr-2" /> Télécharger Badge / Reçu (PDF)
                 </Button>
                 <Button onClick={() => window.location.reload()} variant="secondary" size="lg">Nouveau Check-In</Button>
              </div>
@@ -518,9 +540,8 @@ export default function CheckIn() {
       </div>
       </div>
 
-      {/* Printable Badge and Receipt only visible when printing */}
       {step === 4 && successData && selectedClient && (
-        <div className="hidden print:flex flex-col gap-10 bg-white p-10 print:p-0">
+        <div id="print-area" className="flex flex-col gap-10 bg-white p-10" style={{ position: 'absolute', top: '-9999px', visibility: 'hidden' }}>
           {/* Badge */}
           <div className="border-[3px] border-emerald-800 rounded-xl w-[320px] mx-auto overflow-hidden shadow-none print:shadow-none bg-white">
              <div className="bg-emerald-800 text-white text-center py-4 print:bg-emerald-800 print:text-white" style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
