@@ -96,7 +96,7 @@ router.get('/pending', requireAuth, async (req, res) => {
       FROM reservations r
       JOIN clients c ON r.client_id = c.id
       JOIN chambres ch ON r.chambre_id = ch.id
-      WHERE r.statut IN ('checkin', 'checkout') AND r.mode_facturation = 'direct'
+      WHERE r.statut = 'checkin' AND r.mode_facturation = 'direct'
       ORDER BY r.date_arrivee DESC
     `);
     res.json(result);

@@ -418,6 +418,7 @@ router.post('/:id/checkout-anticipe', requireAuth, requireRole('accueil', 'admin
 // POST /api/reservations/:id/cancel-checkin
 router.post('/:id/cancel-checkin', requireAuth, requireRole('admin'), async (req, res) => {
   try {
+    const { solde_perdu } = req.body;
     await db.transaction(async (client) => {
       const resData = await client.query("SELECT * FROM reservations WHERE id = $1", [req.params.id]);
       const reservation = resData.rows[0];
@@ -448,9 +449,23 @@ router.post('/:id/cancel-checkin', requireAuth, requireRole('admin'), async (req
           VALUES ($1, $2, $3, CURRENT_DATE, 'depart', 'a_faire', 'urgente')
         `, [room.id, room.bloc_id, room.etage]);
       }
+
+      const sessionCaisse = await client.query("SELECT id FROM sessions_caisse WHERE agent_id = $1 AND statut = 'ouverte'", [req.agent.id]);
+      
+      await client.query(`
+        INSERT INTO encaissements (reservation_id, client_id, session_caisse_id, agent_id, montant, type_paiement, formule, description, annule)
+        VALUES ($1, $2, $3, $4, 0, 'especes', $5, $6, 1)
+      `, [
+         req.params.id, 
+         reservation.client_id, 
+         sessionCaisse.rows[0]?.id || null, 
+         req.agent.id, 
+         reservation.formule || 'N/A', 
+         `ANNULATION (Impayé résiduel: ${solde_perdu || 0} DZD) - Clôture Admin`
+      ]);
       
       const { logAction } = require('../middleware/auditLogger.cjs');
-      await logAction(req.agent.id, 'CANCEL_CHECKIN_ADMIN', 'reservations', req.params.id, {}, req.ip);
+      await logAction(req.agent.id, 'CANCEL_CHECKIN_ADMIN', 'reservations', req.params.id, { perte: solde_perdu }, req.ip);
     });
     res.json({ success: true });
   } catch(e) {

@@ -39,12 +39,13 @@ export default function PendingPaymentsModal({ isOpen, onClose }) {
     }
   }, [isOpen, token]);
 
-  const handleAdminCancel = async (id) => {
+  const handleAdminCancel = async (id, solde) => {
     if (!window.confirm("Êtes-vous sûr de vouloir forcer le check-out (annuler le paiement restant) et libérer la chambre ? Cette action est réservée à l'administrateur (ex: client ayant quitté l'établissement sans payer).")) return;
     try {
       const res = await fetch(`/api/reservations/${id}/cancel-checkin`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ solde_perdu: solde })
       });
       if(res.ok) {
          fetchData();
@@ -111,7 +112,7 @@ export default function PendingPaymentsModal({ isOpen, onClose }) {
                                Bloquer le badge
                             </Button>
                             {user?.role === 'admin' && (
-                               <Button variant="danger" size="sm" onClick={() => handleAdminCancel(item.reservation_id)}>
+                               <Button variant="danger" size="sm" onClick={() => handleAdminCancel(item.reservation_id, item.solde)}>
                                   Annuler paiement & Libérer la chambre
                                </Button>
                             )}
