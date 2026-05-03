@@ -1,7 +1,7 @@
 import React from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, NavLink } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
-import { LogOut, Home, CheckSquare } from 'lucide-react';
+import { LogOut, Home, CheckSquare, Package, Droplets } from 'lucide-react';
 
 export default function HousekeepingLayout() {
   const { user, logout } = useAuthStore();
@@ -34,6 +34,20 @@ export default function HousekeepingLayout() {
           </button>
         </div>
       </header>
+
+      <div className="bg-white border-b border-slate-200 shrink-0">
+        <div className="max-w-5xl mx-auto px-4 flex gap-6 overflow-x-auto">
+          <NavLink to="/housekeeping" end className={({isActive}) => `py-3 font-semibold text-sm border-b-2 whitespace-nowrap flex items-center gap-2 ${isActive ? 'border-purple-600 text-purple-700' : 'border-transparent text-slate-500 hover:text-purple-600'}`}>
+            <CheckSquare className="w-4 h-4" /> Tâches du Jour
+          </NavLink>
+          <NavLink to="/housekeeping/demandes" className={({isActive}) => `py-3 font-semibold text-sm border-b-2 whitespace-nowrap flex items-center gap-2 ${isActive ? 'border-purple-600 text-purple-700' : 'border-transparent text-slate-500 hover:text-purple-600'}`}>
+            <Package className="w-4 h-4" /> Demandes Économat
+          </NavLink>
+          <NavLink to="/housekeeping/buanderie" className={({isActive}) => `py-3 font-semibold text-sm border-b-2 whitespace-nowrap flex items-center gap-2 ${isActive ? 'border-purple-600 text-purple-700' : 'border-transparent text-slate-500 hover:text-purple-600'}`}>
+            <Droplets className="w-4 h-4" /> Buanderie
+          </NavLink>
+        </div>
+      </div>
 
       {user?.role === 'admin' && (
         <div className="bg-red-600 text-white px-6 py-2 text-xs font-bold flex items-center justify-center gap-2 shrink-0 animate-pulse">

@@ -135,7 +135,7 @@ router.get('/demandes-maintenance', requireAuth, requireRole('admin'), async (re
              a.nom as agent_nom, a.prenom as agent_prenom
       FROM maintenance_pieces_demandees d
       LEFT JOIN maintenance m ON d.maintenance_id = m.id
-      LEFT JOIN chambres c ON m.chambre_id = c.id
+      LEFT JOIN chambres c ON (m.chambre_id = c.id OR d.chambre_id = c.id)
       LEFT JOIN agents a ON d.agent_id = a.id
       ORDER BY d.created_at DESC
     `);

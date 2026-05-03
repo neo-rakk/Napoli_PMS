@@ -81,6 +81,45 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: err.message || 'Erreur serveur interne' });
 });
 
+const db = require('./db/database.cjs');
+
+// Auto-create missing tables for housekeeping and stock
+(async () => {
+  try {
+    await db.query(`
+      ALTER TABLE maintenance_pieces_demandees ADD COLUMN IF NOT EXISTS origine TEXT DEFAULT 'maintenance';
+      ALTER TABLE maintenance_pieces_demandees ADD COLUMN IF NOT EXISTS chambre_id BIGINT;
+      
+      CREATE TABLE IF NOT EXISTS buanderie_mouvements (
+        id BIGSERIAL PRIMARY KEY,
+        agent_id BIGINT,
+        type TEXT NOT NULL CHECK(type IN ('envoi_externe', 'reception_externe', 'ajout_stock', 'retrait_perte')),
+        reference TEXT,
+        date_mvt TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      );
+      
+      CREATE TABLE IF NOT EXISTS buanderie_articles (
+        id BIGSERIAL PRIMARY KEY,
+        nom TEXT NOT NULL,
+        categorie TEXT,
+        quantite_propre INTEGER DEFAULT 0,
+        quantite_sale INTEGER DEFAULT 0,
+        quantite_externe INTEGER DEFAULT 0
+      );
+      
+      CREATE TABLE IF NOT EXISTS buanderie_lignes_mvt (
+        id BIGSERIAL PRIMARY KEY,
+        mouvement_id BIGINT REFERENCES buanderie_mouvements(id),
+        article_id BIGINT REFERENCES buanderie_articles(id),
+        quantite INTEGER NOT NULL
+      );
+    `);
+    console.log('[Schema] Buanderie and Demandes update applied.');
+  } catch (err) {
+    console.error('[Schema Error]', err);
+  }
+})();
+
 const distPath = path.join(__dirname, '../dist');
 if (fs.existsSync(distPath)) {
   app.use(express.static(distPath));

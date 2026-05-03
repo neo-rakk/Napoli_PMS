@@ -117,4 +117,76 @@ router.get('/:id/consommables', requireAuth, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// GET /api/housekeeping/demandes-internes — fetch housekeeping generic demands
+router.get('/demandes-internes', requireAuth, async (req, res) => {
+  try {
+    const demandes = await db.all(`
+      SELECT d.*, c.numero as chambre_numero 
+      FROM maintenance_pieces_demandees d
+      LEFT JOIN chambres c ON d.chambre_id = c.id
+      WHERE d.origine = 'housekeeping'
+      ORDER BY d.created_at DESC
+    `);
+    res.json(demandes);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// POST /api/housekeeping/demandes-internes — define a new request
+router.post('/demandes-internes', requireAuth, async (req, res) => {
+  try {
+    const { designation, quantite, urgence, notes, chambre_id } = req.body;
+    await db.query(`
+      INSERT INTO maintenance_pieces_demandees (agent_id, designation, quantite, urgence, notes, origine, chambre_id)
+      VALUES ($1, $2, $3, $4, $5, 'housekeeping', $6)
+    `, [req.agent.id, designation, quantite, urgence || 'normale', notes, chambre_id || null]);
+    res.status(201).json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// GET /api/housekeeping/buanderie/articles
+router.get('/buanderie/articles', requireAuth, async (req, res) => {
+  try {
+    const articles = await db.all("SELECT * FROM buanderie_articles ORDER BY categorie, nom");
+    res.json(articles);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/housekeeping/buanderie/mouvement
+router.post('/buanderie/mouvement', requireAuth, async (req, res) => {
+  try {
+    const { type, reference, lignes } = req.body;
+    await db.transaction(async (client) => {
+      const mvtRes = await client.query(`
+        INSERT INTO buanderie_mouvements (agent_id, type, reference) VALUES ($1, $2, $3) RETURNING id
+      `, [req.agent.id, type, reference]);
+      const mvtId = mvtRes.rows[0].id;
+      
+      for (const ligne of lignes) {
+         await client.query(`INSERT INTO buanderie_lignes_mvt (mouvement_id, article_id, quantite) VALUES ($1, $2, $3)`, [mvtId, ligne.article_id, ligne.quantite]);
+         
+         // Update stock
+         if (type === 'envoi_externe') {
+            await client.query(`UPDATE buanderie_articles SET quantite_sale = quantite_sale - $1, quantite_externe = quantite_externe + $1 WHERE id = $2`, [ligne.quantite, ligne.article_id]);
+         } else if (type === 'reception_externe') {
+            await client.query(`UPDATE buanderie_articles SET quantite_externe = quantite_externe - $1, quantite_propre = quantite_propre + $1 WHERE id = $2`, [ligne.quantite, ligne.article_id]);
+         } else if (type === 'ajout_stock') {
+            await client.query(`UPDATE buanderie_articles SET quantite_propre = quantite_propre + $1 WHERE id = $2`, [ligne.quantite, ligne.article_id]);
+         } else if (type === 'retrait_perte') {
+            await client.query(`UPDATE buanderie_articles SET quantite_propre = quantite_propre - $1 WHERE id = $2`, [ligne.quantite, ligne.article_id]);
+         }
+      }
+    });
+    res.status(201).json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/housekeeping/buanderie/articles — add new article type
+router.post('/buanderie/articles', requireAuth, async (req, res) => {
+  try {
+    const { nom, categorie } = req.body;
+    await db.query("INSERT INTO buanderie_articles (nom, categorie) VALUES ($1, $2)", [nom, categorie]);
+    res.status(201).json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 module.exports = router;

@@ -34,6 +34,8 @@ import MaintenanceReception from './pages/reception/MaintenanceReception';
 
 import HousekeepingLayout from './layouts/HousekeepingLayout';
 import HousekeepingDashboard from './pages/housekeeping/HousekeepingDashboard';
+import HousekeepingDemandes from './pages/housekeeping/HousekeepingDemandes';
+import HousekeepingBuanderie from './pages/housekeeping/HousekeepingBuanderie';
 import SecurityLayout from './layouts/SecurityLayout';
 import SecurityDashboard from './pages/security/SecurityDashboard';
 import MaintenanceLayout from './layouts/MaintenanceLayout';
@@ -103,6 +105,8 @@ export default function App() {
           </ProtectedRoute>
         }>
           <Route index element={<HousekeepingDashboard />} />
+          <Route path="demandes" element={<HousekeepingDemandes />} />
+          <Route path="buanderie" element={<HousekeepingBuanderie />} />
         </Route>
 
         {/* Maintenance layout */}

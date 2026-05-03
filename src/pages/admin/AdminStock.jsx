@@ -437,8 +437,8 @@ export default function AdminStock() {
                  />
               </th>
               <th className="px-6 py-4">Article</th>
-              <th className="px-6 py-4">Chambre & Urgence</th>
-              <th className="px-6 py-4">Technicien</th>
+              <th className="px-6 py-4">Origine & Chambre</th>
+              <th className="px-6 py-4">Demandeur</th>
               <th className="px-6 py-4">Statut</th>
               <th className="px-6 py-4">Actions</th>
             </tr>
@@ -468,7 +468,12 @@ export default function AdminStock() {
                   <div className="text-xs text-slate-500">{d.reference ? `Réf: ${d.reference}` : 'Sans référence'}</div>
                 </td>
                 <td className="px-6 py-4">
-                  <div className="font-medium text-slate-800">{d.chambre_numero ? `Chambre ${d.chambre_numero}` : 'Achat Direct'}</div>
+                  <div className="flex items-center gap-2 font-medium text-slate-800">
+                     <span className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${d.origine === 'housekeeping' ? 'bg-purple-100 text-purple-700' : 'bg-orange-100 text-orange-700'}`}>
+                       {d.origine || 'maintenance'}
+                     </span>
+                     {d.chambre_numero ? `Ch. ${d.chambre_numero}` : 'Général'}
+                  </div>
                   <div className={`text-xs uppercase font-bold mt-1 ${d.urgence === 'immediate' ? 'text-red-500' : 'text-amber-500'}`}>
                     Urgence {d.urgence}
                   </div>
