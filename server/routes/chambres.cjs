@@ -106,4 +106,42 @@ router.put('/bulk-update', requireAuth, requireRole('admin'), async (req, res) =
   }
 });
 
+router.post('/bulk-delete', requireAuth, requireRole('admin'), async (req, res) => {
+  try {
+    const { roomIds } = req.body;
+    if (!roomIds || !roomIds.length) {
+       return res.status(400).json({ error: 'roomIds missing' });
+    }
+    
+    await db.transaction(async (client) => {
+      for (const roomId of roomIds) {
+         await client.query("DELETE FROM chambres WHERE id = $1", [roomId]);
+      }
+    });
+    
+    const { logAction } = require('../middleware/auditLogger.cjs');
+    await logAction(req.agent.id, 'SUPPRESSION_CHAMBRES_MASSE', 'chambres', null, { roomIds });
+    res.json({ success: true });
+  } catch (err) {
+    if (err.message.includes('violates foreign key constraint')) {
+       return res.status(400).json({ error: 'Certaines chambres ne peuvent pas être supprimées car elles sont liées à des réservations ou d\'autres enregistrements.' });
+    }
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.delete('/:id', requireAuth, requireRole('admin'), async (req, res) => {
+  try {
+    await db.query("DELETE FROM chambres WHERE id = $1", [req.params.id]);
+    const { logAction } = require('../middleware/auditLogger.cjs');
+    await logAction(req.agent.id, 'SUPPRESSION_CHAMBRE', 'chambres', req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    if (err.message.includes('violates foreign key constraint')) {
+       return res.status(400).json({ error: 'La chambre ne peut pas être supprimée car elle est liée à une réservation.' });
+    }
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

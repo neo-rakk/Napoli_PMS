@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { Button } from '../../components/ui/Button';
-import { Building2, Plus, ArrowLeft, Grip, Settings, Edit3, CheckSquare, Square, Save, Hotel } from 'lucide-react';
+import { Building2, Plus, ArrowLeft, Grip, Settings, Edit3, CheckSquare, Square, Save, Hotel, Trash2 } from 'lucide-react';
 
 export default function AdminHebergement() {
   const { token } = useAuthStore();
@@ -142,10 +142,78 @@ export default function AdminHebergement() {
         }
         setEditMode(false);
         fetchChambres(selectedBloc.id);
+        fetchBlocs();
     } catch(e) { 
         console.error(e); 
         alert("Erreur lors de l'enregistrement");
     }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedRooms.length === 0) return;
+    if (!window.confirm(`Êtes-vous sûr de vouloir supprimer ${selectedRooms.length} chambre(s) ?\nAttention : Si elles sont liées à des réservations, l'opération échouera.`)) return;
+
+    try {
+        const res = await fetch('/api/chambres/bulk-delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ roomIds: selectedRooms })
+        });
+        if (res.ok) {
+            setSelectedRooms([]);
+            setEditMode(false);
+            fetchChambres(selectedBloc.id);
+            fetchBlocs();
+        } else {
+            const err = await res.json();
+            alert(err.error);
+        }
+    } catch(e) {
+        console.error(e);
+        alert('Erreur réseau');
+    }
+  };
+
+  const handleDeleteFloor = async (etage) => {
+    const floorRooms = chambres.filter(c => c.etage === etage).map(c => c.id);
+    if (floorRooms.length === 0) return;
+    if (!window.confirm(`Êtes-vous sûr de vouloir supprimer L'ÉTAGE ${etage} complet (${floorRooms.length} chambres) ?`)) return;
+
+    try {
+        const res = await fetch('/api/chambres/bulk-delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ roomIds: floorRooms })
+        });
+        if (res.ok) {
+            fetchChambres(selectedBloc.id);
+            fetchBlocs();
+        } else {
+            const err = await res.json();
+            alert(err.error);
+        }
+    } catch(e) {
+        console.error(e);
+    }
+  };
+
+  const handleDeleteBloc = async (blocId, blocNom, ev) => {
+    if (ev) ev.stopPropagation();
+    if (!window.confirm(`Voulez-vous VRAIMENT supprimer le bloc ${blocNom} et TOUTES ses chambres ?\nCeci est irréversible.`)) return;
+
+    try {
+        const res = await fetch(`/api/blocs/${blocId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+            if (selectedBloc && selectedBloc.id === blocId) setSelectedBloc(null);
+            fetchBlocs();
+        } else {
+            const err = await res.json();
+            alert(err.error);
+        }
+    } catch(e) { console.error(e); }
   };
 
   const startEditMode = () => {
@@ -205,8 +273,16 @@ export default function AdminHebergement() {
                   <h3 className="text-xl font-bold text-slate-800 group-hover:text-indigo-700 transition-colors">{bloc.nom}</h3>
                   <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{bloc.code}</span>
                 </div>
-                <div className="bg-indigo-50 text-indigo-600 w-10 h-10 rounded-full flex items-center justify-center">
-                  <Hotel className="w-5 h-5" />
+                <div className="flex gap-2">
+                  <button 
+                    onClick={(e) => handleDeleteBloc(bloc.id, bloc.nom, e)}
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors bg-slate-50"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                  <div className="bg-indigo-50 text-indigo-600 w-10 h-10 rounded-full flex items-center justify-center">
+                    <Hotel className="w-5 h-5" />
+                  </div>
                 </div>
               </div>
               <div className="space-y-2 text-sm text-slate-600">
@@ -322,6 +398,11 @@ export default function AdminHebergement() {
                  <Button onClick={() => applyTypeToSelected('Twin')} className="bg-purple-100 hover:bg-purple-200 text-purple-800 border-purple-300 hover:border-purple-400 shadow-none px-6 rounded-full font-bold">Twin</Button>
                  <Button onClick={() => applyTypeToSelected('Office')} className="bg-amber-100 hover:bg-amber-200 text-amber-800 border-amber-300 hover:border-amber-400 shadow-none px-6 rounded-full font-bold">Office</Button>
                  <Button onClick={() => applyTypeToSelected('Stock')} className="bg-slate-200 hover:bg-slate-300 text-slate-800 border-slate-400 hover:border-slate-500 shadow-none px-6 rounded-full font-bold">Stock d'étage</Button>
+                 {selectedRooms.length > 0 && (
+                   <Button onClick={handleDeleteSelected} className="bg-red-100 hover:bg-red-200 text-red-800 border-red-300 hover:border-red-400 shadow-none px-6 rounded-full font-bold ml-auto flex items-center gap-2">
+                     <Trash2 className="w-4 h-4" /> Supprimer
+                   </Button>
+                 )}
               </div>
            </div>
 
@@ -366,7 +447,12 @@ export default function AdminHebergement() {
              <div key={etage} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                 <div className="bg-slate-50 px-5 py-2.5 border-b border-slate-200 font-bold text-slate-700 text-sm uppercase tracking-wider flex items-center justify-between">
                    <span>Étage {etage}</span>
-                   <span className="text-xs font-medium text-slate-400 bg-white px-2 py-0.5 rounded border">{chambres.filter(c => c.etage === etage).length} pièces</span>
+                   <div className="flex items-center gap-4">
+                     <span className="text-xs font-medium text-slate-400 bg-white px-2 py-0.5 rounded border">{chambres.filter(c => c.etage === etage).length} pièces</span>
+                     <button onClick={() => handleDeleteFloor(etage)} className="text-slate-400 hover:text-red-600 transition-colors" title="Supprimer l'étage et toutes ses chambres">
+                       <Trash2 className="w-4 h-4" />
+                     </button>
+                   </div>
                 </div>
                 <div className="p-5 grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3">
                    {chambres.filter(c => c.etage === etage).map(chambre => (

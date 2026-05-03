@@ -50,12 +50,22 @@ router.put('/:id', requireAuth, requireRole('admin'), async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// DELETE /api/blocs/:id — désactiver un bloc
+// DELETE /api/blocs/:id — supprimer un bloc complètement
 router.delete('/:id', requireAuth, requireRole('admin'), async (req, res) => {
   try {
-    await db.run("UPDATE blocs SET actif = 0 WHERE id = $1", [req.params.id]);
+    await db.transaction(async (client) => {
+       await client.query("DELETE FROM chambres WHERE bloc_id = $1", [req.params.id]);
+       await client.query("DELETE FROM blocs WHERE id = $1", [req.params.id]);
+    });
+    const { logAction } = require('../middleware/auditLogger.cjs');
+    await logAction(req.agent.id, 'SUPPRESSION_BLOC', 'blocs', req.params.id);
     res.json({ success: true });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) {
+    if (err.message.includes('violates foreign key constraint')) {
+       return res.status(400).json({ error: 'Le bloc ou ses chambres sont liés à d\'autres enregistrements.' });
+    }
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // GET /api/blocs/:id/stats — statistiques d'un bloc
