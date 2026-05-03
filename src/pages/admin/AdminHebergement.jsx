@@ -20,7 +20,7 @@ export default function AdminHebergement() {
   // Edit Mode
   const [editMode, setEditMode] = useState(false);
   const [selectedRooms, setSelectedRooms] = useState([]);
-  const [bulkType, setBulkType] = useState('Single');
+  const [localChambres, setLocalChambres] = useState([]);
 
   const fetchBlocs = async () => {
     try {
@@ -107,26 +107,73 @@ export default function AdminHebergement() {
     }
   };
 
-  const handleBulkUpdate = async () => {
+  const applyTypeToSelected = (typeStr) => {
     if (selectedRooms.length === 0) return;
+    setLocalChambres(prev => 
+       prev.map(c => selectedRooms.includes(c.id) ? { ...c, type: typeStr } : c)
+    );
+    setSelectedRooms([]);
+  };
+
+  const handleSaveBulk = async () => {
+    const changes = localChambres.filter(lc => {
+       const orig = chambres.find(c => c.id === lc.id);
+       return orig && orig.type !== lc.type;
+    });
+    
+    if (changes.length === 0) {
+        setEditMode(false);
+        return;
+    }
+
+    const byType = {};
+    changes.forEach(c => {
+       if(!byType[c.type]) byType[c.type] = [];
+       byType[c.type].push(c.id);
+    });
+
     try {
-      const res = await fetch('/api/chambres/bulk-update', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ roomIds: selectedRooms, updates: { type: bulkType } })
-      });
-      if (res.ok) {
-        setSelectedRooms([]);
+        for (const [type, roomIds] of Object.entries(byType)) {
+            await fetch('/api/chambres/bulk-update', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ roomIds, updates: { type } })
+            });
+        }
         setEditMode(false);
         fetchChambres(selectedBloc.id);
-      }
-    } catch (e) {
-      console.error(e);
+    } catch(e) { 
+        console.error(e); 
+        alert("Erreur lors de l'enregistrement");
     }
   };
 
-  const selectAll = () => {
-    setSelectedRooms(chambres.map(c => c.id));
+  const startEditMode = () => {
+    setLocalChambres([...chambres]);
+    setEditMode(true);
+    setSelectedRooms([]);
+  };
+
+  const selectAllOnFloor = (etage) => {
+    const currentList = editMode ? localChambres : chambres;
+    const floorRooms = currentList.filter(c => c.etage === etage).map(c => c.id);
+    // If all are selected, unselect them. Otherwise select all.
+    const allSelected = floorRooms.every(id => selectedRooms.includes(id));
+    if (allSelected) {
+      setSelectedRooms(selectedRooms.filter(id => !floorRooms.includes(id)));
+    } else {
+      const newSelected = new Set([...selectedRooms, ...floorRooms]);
+      setSelectedRooms(Array.from(newSelected));
+    }
+  };
+
+  const getTypeColor = (type, isEdit = false) => {
+    const t = type?.toLowerCase() || '';
+    if (t === 'single') return isEdit ? 'bg-blue-100 text-blue-800 border-blue-400' : 'bg-blue-50 text-blue-700 border-blue-200';
+    if (t === 'twin') return isEdit ? 'bg-purple-100 text-purple-800 border-purple-400' : 'bg-purple-50 text-purple-700 border-purple-200';
+    if (t === 'office') return isEdit ? 'bg-amber-100 text-amber-800 border-amber-400' : 'bg-amber-50 text-amber-700 border-amber-200';
+    if (t === 'stock') return isEdit ? 'bg-slate-200 text-slate-800 border-slate-400' : 'bg-slate-100 text-slate-600 border-slate-200';
+    return isEdit ? 'bg-white text-slate-800 border-slate-300' : 'bg-white text-slate-600 border-slate-200';
   };
 
   if (!selectedBloc) {
@@ -221,108 +268,122 @@ export default function AdminHebergement() {
   const etages = [...new Set(chambres.map(c => c.etage))].sort((a,b) => b-a); // Sort descending (top floor first)
 
   return (
-    <div className="p-8 max-w-7xl mx-auto pb-32"> {/* pb-32 for floating action bar */}
-      <div className="flex items-center gap-4 mb-8">
-        <button onClick={() => setSelectedBloc(null)} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-500">
-           <ArrowLeft className="w-5 h-5" />
-        </button>
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold text-slate-800">Bloc: {selectedBloc.nom}</h1>
-          <p className="text-slate-500">{selectedBloc.nb_etages} étages — {chambres.length} chambres totales</p>
-        </div>
-        
-        {chambres.length === 0 ? (
-          <Button onClick={() => setShowGenerateModal(true)} className="bg-indigo-600 hover:bg-indigo-700">
-            <Settings className="w-4 h-4 mr-2" /> Générer les chambres
-          </Button>
-        ) : (
-          <Button 
-             onClick={() => { setEditMode(!editMode); setSelectedRooms([]); }} 
-             variant={editMode ? "outline" : "default"}
-             className={editMode ? "border-slate-300" : "bg-slate-800 hover:bg-slate-900"}
-          >
-            {editMode ? "Annuler Édition" : <><Edit3 className="w-4 h-4 mr-2" /> Éditer les chambres</>}
-          </Button>
-        )}
-      </div>
-
-      {chambres.length > 0 && (
-        <div className="space-y-8">
-          {editMode && (
-             <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-4 flex justify-between items-center text-sm text-indigo-800">
-               <span>Mode édition actif. Cliquez sur les chambres pour les sélectionner.</span>
-               <button onClick={selectAll} className="font-bold underline cursor-pointer">Sélectionner tout</button>
-             </div>
+    <div className={`mx-auto ${editMode ? 'w-full' : 'p-8 max-w-7xl'}`}>
+      {!editMode && (
+        <div className="flex items-center gap-4 mb-8">
+          <button onClick={() => setSelectedBloc(null)} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-500">
+             <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold text-slate-800">Bloc: {selectedBloc.nom}</h1>
+            <p className="text-slate-500">{selectedBloc.nb_etages} étages — {chambres.length} chambres totales</p>
+          </div>
+          
+          {chambres.length === 0 ? (
+            <Button onClick={() => setShowGenerateModal(true)} className="bg-indigo-600 hover:bg-indigo-700">
+              <Settings className="w-4 h-4 mr-2" /> Générer les chambres
+            </Button>
+          ) : (
+            <Button 
+               onClick={startEditMode} 
+               className="bg-slate-800 hover:bg-slate-900"
+            >
+              <Edit3 className="w-4 h-4 mr-2" /> Éditer les chambres
+            </Button>
           )}
+        </div>
+      )}
 
+      {/* EDIT MODE COMPLET VIEW */}
+      {editMode && (
+        <div className="fixed inset-0 bg-white z-50 overflow-y-auto flex flex-col">
+           <div className="sticky top-0 bg-white border-b border-slate-200 p-4 shadow-sm z-10 flex flex-col gap-4">
+              <div className="flex justify-between items-center max-w-7xl mx-auto w-full">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                    <Edit3 className="w-5 h-5 text-indigo-600" />
+                    Édition des chambres - {selectedBloc.nom}
+                  </h2>
+                  <p className="text-sm text-slate-500">Sélectionnez des chambres en bas, puis cliquez sur un type pour appliquer.</p>
+                </div>
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={() => setEditMode(false)}>Annuler</Button>
+                  <Button onClick={handleSaveBulk} className="bg-indigo-600 hover:bg-indigo-700">
+                    <Save className="w-4 h-4 mr-2" /> Enregistrer les modifications
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-center gap-4 max-w-7xl mx-auto w-full pb-2">
+                 <div className="text-sm font-semibold text-slate-600 mr-2 flex items-center gap-2 border-r pr-4 border-slate-300">
+                   <span className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs">{selectedRooms.length} sélectionnée(s)</span>
+                 </div>
+                 <Button onClick={() => applyTypeToSelected('Single')} className="bg-blue-100 hover:bg-blue-200 text-blue-800 border-blue-300 hover:border-blue-400 shadow-none px-6 rounded-full font-bold">Single</Button>
+                 <Button onClick={() => applyTypeToSelected('Twin')} className="bg-purple-100 hover:bg-purple-200 text-purple-800 border-purple-300 hover:border-purple-400 shadow-none px-6 rounded-full font-bold">Twin</Button>
+                 <Button onClick={() => applyTypeToSelected('Office')} className="bg-amber-100 hover:bg-amber-200 text-amber-800 border-amber-300 hover:border-amber-400 shadow-none px-6 rounded-full font-bold">Office</Button>
+                 <Button onClick={() => applyTypeToSelected('Stock')} className="bg-slate-200 hover:bg-slate-300 text-slate-800 border-slate-400 hover:border-slate-500 shadow-none px-6 rounded-full font-bold">Stock d'étage</Button>
+              </div>
+           </div>
+
+           <div className="p-6 max-w-7xl mx-auto flex-1 w-full space-y-8">
+              {etages.map(etage => (
+                <div key={etage} className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                   <div className="bg-slate-50 px-6 py-3 border-b border-slate-200 text-sm flex justify-between items-center">
+                     <span className="font-bold uppercase tracking-wider text-slate-700">Étage {etage}</span>
+                     <button className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-3 py-1 rounded border border-indigo-100 hover:border-indigo-300 transition-colors" onClick={() => selectAllOnFloor(etage)}>
+                       Sélectionner tout l'étage
+                     </button>
+                   </div>
+                   <div className="p-5 grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-3">
+                     {localChambres.filter(c => c.etage === etage).map(ch => {
+                        const isSelected = selectedRooms.includes(ch.id);
+                        return (
+                            <div 
+                              key={ch.id}
+                              onClick={() => toggleRoomSelection(ch.id)}
+                              className={`
+                                cursor-pointer border rounded-lg flex flex-col items-center justify-center p-2 text-center transition-all
+                                ${isSelected ? 'ring-2 ring-indigo-600 ring-offset-2 scale-105 shadow-md z-10' : 'hover:scale-105'}
+                                ${getTypeColor(ch.type, isSelected)}
+                              `}
+                            >
+                               <span className={`text-base font-black ${isSelected ? 'text-indigo-900' : ''}`}>{ch.numero}</span>
+                               <span className={`text-[10px] w-full truncate font-bold uppercase ${isSelected ? 'text-indigo-700 opacity-100' : 'opacity-70 mt-1'}`}>{ch.type || 'N/A'}</span>
+                            </div>
+                        )
+                     })}
+                   </div>
+                </div>
+              ))}
+           </div>
+        </div>
+      )}
+
+      {/* NORMAL VIEW */}
+      {!editMode && chambres.length > 0 && (
+        <div className="space-y-6">
           {etages.map(etage => (
              <div key={etage} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="bg-slate-50 px-6 py-3 border-b border-slate-200 font-bold text-slate-700 text-sm uppercase tracking-wider flex items-center justify-between">
+                <div className="bg-slate-50 px-5 py-2.5 border-b border-slate-200 font-bold text-slate-700 text-sm uppercase tracking-wider flex items-center justify-between">
                    <span>Étage {etage}</span>
                    <span className="text-xs font-medium text-slate-400 bg-white px-2 py-0.5 rounded border">{chambres.filter(c => c.etage === etage).length} pièces</span>
                 </div>
-                <div className="p-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                   {chambres.filter(c => c.etage === etage).map(chambre => {
-                      const isSelected = selectedRooms.includes(chambre.id);
-                      return (
-                        <div 
-                           key={chambre.id} 
-                           onClick={() => editMode && toggleRoomSelection(chambre.id)}
-                           className={`
-                             relative border rounded-lg p-3 text-center transition-all
-                             ${editMode ? 'cursor-pointer hover:border-indigo-400' : ''}
-                             ${isSelected ? 'bg-indigo-50 border-indigo-500 shadow-md ring-1 ring-indigo-500' : 'border-slate-200'}
-                             ${!editMode ? 'bg-white' : ''}
-                           `}
-                        >
-                           {editMode && (
-                              <div className="absolute top-2 right-2 text-indigo-500">
-                                {isSelected ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4 text-slate-300" />}
-                              </div>
-                           )}
-                           <div className="text-lg font-black text-slate-800 mt-2">{chambre.numero}</div>
-                           <div className={`text-xs font-bold uppercase mt-1 inline-block px-2 py-0.5 rounded-full
-                              ${chambre.type?.toLowerCase() === 'single' ? 'bg-blue-100 text-blue-700' : ''}
-                              ${chambre.type?.toLowerCase() === 'twin' ? 'bg-purple-100 text-purple-700' : ''}
-                              ${chambre.type?.toLowerCase() === 'office' ? 'bg-amber-100 text-amber-700' : ''}
-                              ${chambre.type?.toLowerCase() === 'stock' ? 'bg-neutral-100 text-neutral-600' : ''}
-                              ${!['single','twin','office','stock'].includes(chambre.type?.toLowerCase()) ? 'bg-slate-100 text-slate-600' : ''}
-                           `}>
-                             {chambre.type || 'N/A'}
-                           </div>
-                        </div>
-                      )
-                   })}
+                <div className="p-5 grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3">
+                   {chambres.filter(c => c.etage === etage).map(chambre => (
+                      <div 
+                         key={chambre.id} 
+                         className={`border rounded-lg p-2 flex flex-col items-center justify-center text-center shadow-sm ${getTypeColor(chambre.type, false)}`}
+                      >
+                         <div className="text-base font-black text-slate-800">{chambre.numero}</div>
+                         <div className="text-[10px] font-bold uppercase mt-1 opacity-80 w-full truncate">
+                           {chambre.type || 'N/A'}
+                         </div>
+                      </div>
+                   ))}
                 </div>
              </div>
           ))}
         </div>
-      )}
-
-      {/* Floating Action Bar for Edit Mode */}
-      {editMode && selectedRooms.length > 0 && (
-         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-white rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-slate-200 px-6 py-4 flex items-center gap-6 z-40 animate-in slide-in-from-bottom-10 fade-in duration-300">
-            <div className="font-bold text-indigo-600">
-               {selectedRooms.length} chambre{selectedRooms.length > 1 ? 's' : ''} sélectionnée{selectedRooms.length > 1 ? 's' : ''}
-            </div>
-            <div className="w-px h-8 bg-slate-200"></div>
-            <div className="flex items-center gap-3">
-               <span className="text-sm font-medium text-slate-600">Type :</span>
-               <select 
-                  className="border border-slate-300 rounded-md py-1.5 px-3 text-sm focus:ring-indigo-500 font-medium bg-slate-50"
-                  value={bulkType}
-                  onChange={e => setBulkType(e.target.value)}
-               >
-                  <option value="Single">Single</option>
-                  <option value="Twin">Twin</option>
-                  <option value="Office">Office</option>
-                  <option value="Stock">Stock</option>
-               </select>
-               <Button onClick={handleBulkUpdate} className="bg-indigo-600 hover:bg-indigo-700 ml-2 rounded-full px-6">
-                  <Save className="w-4 h-4 mr-2" /> Appliquer
-               </Button>
-            </div>
-         </div>
       )}
 
       {/* Modal Generate Rooms */}
