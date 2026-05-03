@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { Button } from '../../components/ui/Button';
-import { PackageSearch, PlusCircle, ArrowDownToLine, ArrowUpFromLine, AlertTriangle, FileText, CheckCircle } from 'lucide-react';
+import { PackageSearch, PlusCircle, ArrowDownToLine, ArrowUpFromLine, AlertTriangle, FileText, CheckCircle, Search } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -28,6 +28,7 @@ export default function AdminStock() {
   const [selectedDemandes, setSelectedDemandes] = useState([]);
   const [quantitesCommande, setQuantitesCommande] = useState({});
   const [directItems, setDirectItems] = useState([{ designation: '', quantite: 1 }]);
+  const [searchArticle, setSearchArticle] = useState('');
 
   // Forms
   const [form, setForm] = useState({ nom: '', categorie: 'economat', seuil_alerte: 5, unite: 'Unités', description: '' });
@@ -301,41 +302,91 @@ export default function AdminStock() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-6">
-        {loading && <div className="col-span-full text-center py-8 text-slate-500">Chargement...</div>}
-        {!loading && articles.length === 0 && <div className="col-span-full text-center py-8 text-slate-500">Aucun article en stock.</div>}
-        
-        {Array.isArray(articles) && articles.map(a => (
-           <div key={a.id} className={`bg-white rounded-2xl shadow-sm border p-5 flex flex-col ${a.quantite_actuelle <= a.seuil_alerte ? 'border-red-300' : 'border-slate-200'}`}>
-              <div className="flex justify-between items-start mb-2">
-                 <span className="px-2 py-1 text-xs font-bold uppercase rounded bg-slate-100 text-slate-600">{a.categorie}</span>
-                 {a.quantite_actuelle <= a.seuil_alerte && <AlertTriangle className="w-5 h-5 text-red-500" title="Stock d'alerte atteint" />}
-                 <Button variant="ghost" size="sm" onClick={() => { setSelectedArticle(a); setForm(a); setShowEditArticle(true); }} className="text-slate-400 hover:text-indigo-600 p-1 h-auto ml-auto mr-1">✏️</Button>
-              </div>
-              <h3 className="font-bold text-lg text-slate-800 mb-1">{a.nom}</h3>
-              <p className="text-xs text-slate-500 mb-4 h-8 overflow-hidden">{a.description || 'Aucune description'}</p>
-              
-              <div className="mt-auto pt-4 border-t border-slate-100">
-                 <div className="flex justify-between items-end mb-4">
-                    <div>
-                      <div className="text-xs text-slate-400 font-medium uppercase">En stock</div>
-                      <div className={`text-3xl font-black ${a.quantite_actuelle <= a.seuil_alerte ? 'text-red-600' : 'text-slate-800'}`}>
-                         {a.quantite_actuelle} <span className="text-sm font-medium text-slate-500">{a.unite}</span>
-                      </div>
-                    </div>
-                 </div>
-                 
-                 <div className="grid grid-cols-2 gap-2">
-                    <Button variant="outline" size="sm" className="w-full text-xs font-bold border-emerald-200 text-emerald-700 hover:bg-emerald-50" onClick={() => openMvt(a, 'entree')}>
-                       <ArrowDownToLine className="w-4 h-4 mr-1" /> Entrée
-                    </Button>
-                    <Button variant="outline" size="sm" className="w-full text-xs font-bold border-amber-200 text-amber-700 hover:bg-amber-50" onClick={() => openMvt(a, 'sortie')}>
-                       <ArrowUpFromLine className="w-4 h-4 mr-1" /> Sortie
-                    </Button>
-                 </div>
-              </div>
-           </div>
-        ))}
+      <div className="mb-6 flex gap-4 items-center">
+         <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input 
+               type="text" 
+               placeholder="Rechercher un article..." 
+               className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+               value={searchArticle}
+               onChange={(e) => setSearchArticle(e.target.value)}
+            />
+         </div>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+         <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm text-slate-600">
+               <thead className="bg-slate-50 text-slate-500 text-xs uppercase font-semibold">
+                  <tr>
+                     <th className="px-4 py-3">Réf / Nom</th>
+                     <th className="px-4 py-3">Catégorie</th>
+                     <th className="px-4 py-3 text-right">En Stock</th>
+                     <th className="px-4 py-3 text-right">Seuil</th>
+                     <th className="px-4 py-3 text-center">Actions rapides</th>
+                  </tr>
+               </thead>
+               <tbody className="divide-y divide-slate-100">
+                  {loading && (
+                     <tr>
+                        <td colSpan="5" className="text-center py-8 text-slate-500">Chargement...</td>
+                     </tr>
+                  )}
+                  {!loading && articles.length === 0 && (
+                     <tr>
+                        <td colSpan="5" className="text-center py-8 text-slate-500">Aucun article en stock.</td>
+                     </tr>
+                  )}
+                  {Array.isArray(articles) && articles
+                     .filter(a => searchArticle === '' || a.nom.toLowerCase().includes(searchArticle.toLowerCase()) || a.categorie.toLowerCase().includes(searchArticle.toLowerCase()))
+                     .map(a => (
+                     <tr key={a.id} className={`hover:bg-slate-50 transition-colors ${a.quantite_actuelle <= a.seuil_alerte ? 'bg-red-50/30' : ''}`}>
+                        <td className="px-4 py-3">
+                           <div className="flex items-center gap-2">
+                              {a.quantite_actuelle <= a.seuil_alerte && <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" title="Stock d'alerte atteint" />}
+                              <div>
+                                 <div className="font-bold text-slate-800 flex items-center gap-2">
+                                    {a.nom}
+                                    <Button variant="ghost" size="sm" onClick={() => { setSelectedArticle(a); setForm(a); setShowEditArticle(true); }} className="text-slate-400 hover:text-indigo-600 p-0 h-auto">✏️</Button>
+                                 </div>
+                                 <div className="text-xs text-slate-500 max-w-xs truncate">{a.description || 'Aucune description'}</div>
+                              </div>
+                           </div>
+                        </td>
+                        <td className="px-4 py-3">
+                           <span className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${
+                              a.categorie === 'maintenance' ? 'bg-amber-100 text-amber-700' :
+                              a.categorie === 'housekeeping' ? 'bg-emerald-100 text-emerald-700' :
+                              'bg-slate-100 text-slate-600'
+                           }`}>
+                              {a.categorie}
+                           </span>
+                        </td>
+                        <td className="px-4 py-3 text-right font-medium">
+                           <div className={`text-lg font-black ${a.quantite_actuelle <= a.seuil_alerte ? 'text-red-600' : 'text-slate-800'}`}>
+                              {a.quantite_actuelle}
+                           </div>
+                           <div className="text-[10px] text-slate-400 uppercase">{a.unite}</div>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                           <span className="text-slate-500 text-sm">{a.seuil_alerte}</span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                           <div className="flex justify-center gap-2">
+                              <Button variant="outline" size="sm" className="h-8 px-2 text-xs font-bold border-emerald-200 text-emerald-700 hover:bg-emerald-50" onClick={() => openMvt(a, 'entree')}>
+                                 <ArrowDownToLine className="w-4 h-4 mr-1" /> Entrée
+                              </Button>
+                              <Button variant="outline" size="sm" className="h-8 px-2 text-xs font-bold border-amber-200 text-amber-700 hover:bg-amber-50" onClick={() => openMvt(a, 'sortie')}>
+                                 <ArrowUpFromLine className="w-4 h-4 mr-1" /> Sortie
+                              </Button>
+                           </div>
+                        </td>
+                     </tr>
+                  ))}
+               </tbody>
+            </table>
+         </div>
       </div>
 
       <div className="mt-12 mb-6 flex justify-between items-center">
