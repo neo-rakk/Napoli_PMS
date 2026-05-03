@@ -15,6 +15,12 @@ export default function AdminStock() {
   const [showCreate, setShowCreate] = useState(false);
   const [showEditArticle, setShowEditArticle] = useState(false);
   const [showEditDemande, setShowEditDemande] = useState(false);
+  const [showFournirStock, setShowFournirStock] = useState(false);
+  const [demandeToFournir, setDemandeToFournir] = useState(null);
+  const [fournirArticleId, setFournirArticleId] = useState('');
+  const [fournirQuantite, setFournirQuantite] = useState(1);
+  const [fournirSearchTerm, setFournirSearchTerm] = useState('');
+
   const [showAchatDirect, setShowAchatDirect] = useState(false);
   const [showMvt, setShowMvt] = useState(false);
   const [showBonAchat, setShowBonAchat] = useState(false);
@@ -78,6 +84,23 @@ export default function AdminStock() {
       if(res.ok) {
         setShowEditArticle(false);
         setSelectedArticle(null);
+        fetchData();
+      }
+    } catch(e) {}
+  };
+
+  const handleFournirStock = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(`/api/stocks/demandes-maintenance/${demandeToFournir.id}/fournir`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ article_id: fournirArticleId, quantite: fournirQuantite })
+      });
+      if(res.ok) {
+        setShowFournirStock(false);
+        setDemandeToFournir(null);
+        setFournirArticleId('');
         fetchData();
       }
     } catch(e) {}
@@ -466,7 +489,10 @@ export default function AdminStock() {
                 </td>
                 <td className="px-6 py-4 flex flex-col gap-2">
                   {d.statut === 'en_attente' && (
-                    <Button variant="ghost" size="sm" onClick={() => { setSelectedDemandeToEdit(d); setShowEditDemande(true); }} className="text-slate-400 hover:text-indigo-600 p-1 h-auto text-xs flex justify-start">✏️ Modifier</Button>
+                    <>
+                       <Button variant="ghost" size="sm" onClick={() => { setSelectedDemandeToEdit(d); setShowEditDemande(true); }} className="text-slate-400 hover:text-indigo-600 p-1 h-auto text-xs flex justify-start">✏️ Modifier</Button>
+                       <Button variant="ghost" size="sm" onClick={() => { setDemandeToFournir(d); setFournirQuantite(d.quantite); setFournirSearchTerm(''); setFournirArticleId(''); setShowFournirStock(true); }} className="text-emerald-500 hover:text-emerald-600 p-1 h-auto text-xs flex justify-start items-center gap-1"><PackageSearch className="w-3 h-3" /> Lier au stock</Button>
+                    </>
                   )}
                   {d.statut === 'commande' && (
                     <Button size="sm" variant="outline" className="text-xs py-1 h-8 border-emerald-200 text-emerald-700 hover:bg-emerald-50 w-full" 
@@ -607,6 +633,76 @@ export default function AdminStock() {
                  <div className="pt-4 flex justify-end gap-3 mt-4 border-t border-slate-100">
                    <Button variant="outline" type="button" onClick={() => setShowEditDemande(false)}>Annuler</Button>
                    <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700">Enregistrer</Button>
+                 </div>
+              </form>
+           </div>
+         </div>
+      )}
+
+      {showFournirStock && demandeToFournir && (
+         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                 <PackageSearch className="w-5 h-5 text-emerald-600" /> Fournir depuis le stock
+              </h2>
+              <p className="text-sm text-slate-500 mb-6">Liez la demande <strong>« {demandeToFournir.designation} »</strong> à un article existant en stock pour la clôturer.</p>
+              
+              <form onSubmit={handleFournirStock} className="space-y-4 overflow-visible">
+                 <div className="relative">
+                   <label className="block text-sm font-medium mb-1">Rechercher un article existant *</label>
+                   <input 
+                      type="text" 
+                      placeholder="Nom de l'article..." 
+                      className="w-full border rounded-md p-2 mb-2" 
+                      value={fournirSearchTerm} 
+                      onChange={e => {
+                         setFournirSearchTerm(e.target.value);
+                         if (fournirArticleId) setFournirArticleId(''); // reset selection if search changes
+                      }} 
+                   />
+                   
+                   {/* Dropdown with filtered articles */}
+                   {fournirSearchTerm && !fournirArticleId && (
+                      <div className="absolute z-10 w-full bg-white border border-slate-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                         {articles
+                            .filter(a => a.nom.toLowerCase().includes(fournirSearchTerm.toLowerCase()) || a.categorie.toLowerCase().includes(fournirSearchTerm.toLowerCase()))
+                            .map(a => (
+                               <div 
+                                  key={a.id} 
+                                  className="p-2 hover:bg-slate-50 cursor-pointer border-b border-slate-100 last:border-b-0"
+                                  onClick={() => {
+                                     setFournirArticleId(a.id);
+                                     setFournirSearchTerm(a.nom);
+                                  }}
+                               >
+                                  <div className="font-bold text-sm text-slate-800">{a.nom}</div>
+                                  <div className="text-xs text-slate-500 flex justify-between">
+                                     <span>Stock: {a.quantite_actuelle} {a.unite}</span>
+                                     <span className="uppercase">{a.categorie}</span>
+                                  </div>
+                               </div>
+                            ))}
+                         {articles.filter(a => a.nom.toLowerCase().includes(fournirSearchTerm.toLowerCase()) || a.categorie.toLowerCase().includes(fournirSearchTerm.toLowerCase())).length === 0 && (
+                            <div className="p-3 text-sm text-slate-500 text-center">Aucun article trouvé</div>
+                         )}
+                      </div>
+                   )}
+                   
+                   {fournirArticleId && (
+                      <div className="bg-emerald-50 text-emerald-700 p-2 rounded text-sm border border-emerald-100 mt-2 flex items-center gap-2">
+                         <CheckCircle className="w-4 h-4" /> Article sélectionné
+                      </div>
+                   )}
+                 </div>
+                 
+                 <div>
+                   <label className="block text-sm font-medium mb-1">Quantité à prélever *</label>
+                   <input required type="number" min="1" className="w-full border rounded-md p-2" value={fournirQuantite} onChange={e=>setFournirQuantite(parseInt(e.target.value))} />
+                   <p className="text-xs text-slate-400 mt-1">Sera déduite du stock de l'article sélectionné.</p>
+                 </div>
+                 <div className="pt-4 flex justify-end gap-3 mt-4 border-t border-slate-100">
+                   <Button variant="outline" type="button" onClick={() => setShowFournirStock(false)}>Annuler</Button>
+                   <Button type="submit" disabled={!fournirArticleId} className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50">Confirmer la sortie</Button>
                  </div>
               </form>
            </div>

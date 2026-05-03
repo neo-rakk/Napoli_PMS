@@ -173,6 +173,32 @@ router.post('/demandes-maintenance/direct', requireAuth, requireRole('admin'), a
   }
 });
 
+router.post('/demandes-maintenance/:id/fournir', requireAuth, requireRole('admin'), async (req, res) => {
+  try {
+    const { article_id, quantite } = req.body;
+    
+    await db.transaction(async (client) => {
+       // 1. Decrement stock
+       await client.query(`UPDATE stock_articles SET quantite_actuelle = quantite_actuelle - $1 WHERE id = $2`, [quantite, article_id]);
+       
+       // 2. Insert sortie movement
+       const refMvt = `Fourniture Interne (Demande #${req.params.id})`;
+       await client.query(`
+          INSERT INTO stock_mouvements (article_id, agent_id, type_mouvement, quantite, reference)
+          VALUES ($1, $2, 'sortie', $3, $4)
+       `, [article_id, req.agent.id, quantite, refMvt]);
+
+       // 3. Mark demande as completed (mis_a_disposition)
+       // We can also save the article_id to this request to link it, but wait, schema doesn't have it. Just changing the status.
+       await client.query(`UPDATE maintenance_pieces_demandees SET statut = 'mis_a_disposition', designation = (SELECT nom FROM stock_articles WHERE id = $1) WHERE id = $2`, [article_id, req.params.id]);
+    });
+
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 router.post('/demandes-maintenance/:id/statut', requireAuth, requireRole('admin'), async (req, res) => {
   try {
     const { statut } = req.body;
