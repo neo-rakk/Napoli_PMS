@@ -107,8 +107,22 @@ router.get('/pending', requireAuth, async (req, res) => {
 router.get('/journal', requireAuth, async (req, res) => {
   try {
     const query = req.agent.role === 'admin'
-      ? `SELECT e.*, a.nom as agent_nom, a.prenom as agent_prenom FROM encaissements e JOIN agents a ON e.agent_id = a.id WHERE DATE(e.created_at) = CURRENT_DATE AND e.annule = 0 ORDER BY e.created_at DESC`
-      : `SELECT e.*, a.nom as agent_nom, a.prenom as agent_prenom FROM encaissements e JOIN agents a ON e.agent_id = a.id WHERE DATE(e.created_at) = CURRENT_DATE AND e.agent_id = $1 AND e.annule = 0 ORDER BY e.created_at DESC`;
+      ? `SELECT e.*, a.nom as agent_nom, a.prenom as agent_prenom, c.nom as client_nom, c.prenom as client_prenom, ch.numero as chambre_numero 
+         FROM encaissements e 
+         JOIN agents a ON e.agent_id = a.id 
+         LEFT JOIN clients c ON e.client_id = c.id
+         LEFT JOIN reservations r ON e.reservation_id = r.id
+         LEFT JOIN chambres ch ON r.chambre_id = ch.id
+         WHERE DATE(e.created_at) = CURRENT_DATE AND e.annule = 0 
+         ORDER BY e.created_at DESC`
+      : `SELECT e.*, a.nom as agent_nom, a.prenom as agent_prenom, c.nom as client_nom, c.prenom as client_prenom, ch.numero as chambre_numero 
+         FROM encaissements e 
+         JOIN agents a ON e.agent_id = a.id 
+         LEFT JOIN clients c ON e.client_id = c.id
+         LEFT JOIN reservations r ON e.reservation_id = r.id
+         LEFT JOIN chambres ch ON r.chambre_id = ch.id
+         WHERE DATE(e.created_at) = CURRENT_DATE AND e.agent_id = $1 AND e.annule = 0 
+         ORDER BY e.created_at DESC`;
     const params = req.agent.role === 'admin' ? [] : [req.agent.id];
     res.json(await db.all(query, params));
   } catch (err) { res.status(500).json({ error: err.message }); }

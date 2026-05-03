@@ -139,7 +139,7 @@ router.post('/simulate', requireAuth, requireRole('accueil', 'admin'), async (re
 router.post('/checkin', requireAuth, requireRole('accueil', 'admin'), async (req, res) => {
   const { 
     client_id, chambre_id, date_checkout_prevu, formule, mode_facturation,
-    grand_compte_id, bon_commande_id 
+    grand_compte_id, bon_commande_id, montant_encaisse, type_paiement
   } = req.body;
 
   if (!client_id || !chambre_id || !date_checkout_prevu || !formule || !mode_facturation) {
@@ -149,6 +149,16 @@ router.post('/checkin', requireAuth, requireRole('accueil', 'admin'), async (req
   try {
     let result = {};
     await db.transaction(async (client) => {
+      // Check session caisse if payment
+      let session = null;
+      if (montant_encaisse && montant_encaisse > 0) {
+        const sessionRes = await client.query("SELECT id FROM sessions_caisse WHERE agent_id = $1 AND statut = 'ouverte'", [req.agent.id]);
+        session = sessionRes.rows[0];
+        if (!session) {
+          throw new Error("Aucune session de caisse ouverte. Ouvrez une session avant d'encaisser.");
+        }
+      }
+
       // Vérifier client
       const clientDataRes = await client.query('SELECT * FROM clients WHERE id = $1', [client_id]);
       const clientData = clientDataRes.rows[0];
@@ -190,6 +200,26 @@ router.post('/checkin', requireAuth, requireRole('accueil', 'admin'), async (req
       ]);
 
       const reservationId = resDb.rows[0].id;
+
+      if (montant_encaisse && montant_encaisse > 0) {
+        await client.query(`
+          INSERT INTO encaissements 
+            (reservation_id, client_id, agent_id, session_caisse_id, montant, type_paiement, formule, description)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        `, [
+          reservationId, client_id, req.agent.id, session.id, montant_encaisse, type_paiement || 'especes', formule, 'Paiement à la réception (Check-in)'
+        ]);
+        
+        // Mettre à jour les totaux de la session en direct si nécessaire
+        // (optionnel car la vue caisse peut faire un SUM, mais c'est bien)
+        const colMap = {
+           'especes': 'total_especes',
+           'virement': 'total_virement',
+           'cheque': 'total_cheques'
+        };
+        const col = colMap[type_paiement || 'especes'] || 'total_especes';
+        await client.query(`UPDATE sessions_caisse SET ${col} = COALESCE(${col},0) + $1, total_general = COALESCE(total_general,0) + $1 WHERE id = $2`, [montant_encaisse, session.id]);
+      }
 
       // Update Client statut & groupe_id if not set (but group handling is separate)
       await client.query("UPDATE clients SET statut = 'enregistre' WHERE id = $1", [client_id]);

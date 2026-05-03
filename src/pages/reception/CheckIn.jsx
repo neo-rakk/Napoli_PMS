@@ -26,7 +26,9 @@ export default function CheckIn() {
     formule: '',
     mode_facturation: 'direct',
     grand_compte_id: '',
-    bon_commande_id: ''
+    bon_commande_id: '',
+    montant_encaisse: 0,
+    type_paiement: 'especes'
   });
   
   const [loading, setLoading] = useState(false);
@@ -206,9 +208,10 @@ export default function CheckIn() {
   };
 
   return (
-    <div className="p-8 max-w-5xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-800">Check-In Réception</h1>
+    <>
+      <div className="p-8 max-w-5xl mx-auto print:hidden">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-slate-800">Check-In Réception</h1>
         <p className="text-slate-500">Validation d'identité et attribution de chambre.</p>
       </div>
 
@@ -459,13 +462,34 @@ export default function CheckIn() {
               </div>
             </div>
 
-            <div className="flex justify-between mt-8">
+            <div className="flex justify-between items-end mt-8 pt-6 border-t border-slate-200">
                <Button variant="ghost" onClick={() => setStep(2)}>Retour</Button>
-               <Button 
-                onClick={submitCheckin} disabled={loading || !formData.chambre_id || !formData.date_checkout_prevu || !formData.formule || (formData.mode_facturation === 'grand_compte' && (!formData.grand_compte_id || !formData.bon_commande_id))}
-               >
-                 {loading ? 'Check-In...' : 'Valider le Check-In'}
-               </Button>
+               <div className="flex gap-4 items-end">
+                 {formData.mode_facturation === 'direct' && (
+                   <div className="flex gap-3 bg-emerald-50 p-3 rounded-xl border border-emerald-100">
+                      <div>
+                        <label className="block text-[11px] uppercase font-bold text-emerald-800 mb-1">Paiement (DZD)</label>
+                        <input type="number" min="0" className="border-emerald-200 rounded p-2 w-32 font-bold text-emerald-900" placeholder="0" value={formData.montant_encaisse || ''} onChange={e => setFormData({...formData, montant_encaisse: parseFloat(e.target.value) || 0})} />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] uppercase font-bold text-emerald-800 mb-1">Moyen de paiement</label>
+                        <select className="border-emerald-200 rounded p-2 text-emerald-900" value={formData.type_paiement} onChange={e => setFormData({...formData, type_paiement: e.target.value})}>
+                           <option value="especes">Espèces</option>
+                           <option value="carte">Carte (TPE)</option>
+                           <option value="cheque">Chèque</option>
+                        </select>
+                      </div>
+                   </div>
+                 )}
+                 <Button 
+                   onClick={submitCheckin} 
+                   size="lg"
+                   className={`${formData.montant_encaisse > 0 ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                   disabled={loading || !formData.chambre_id || !formData.date_checkout_prevu || !formData.formule || (formData.mode_facturation === 'grand_compte' && (!formData.grand_compte_id || !formData.bon_commande_id))}
+                 >
+                   {loading ? 'Check-In...' : (formData.montant_encaisse > 0 ? `Encaisser ${(formData.montant_encaisse).toLocaleString()} DZD & Check-in` : 'Valider Check-In (Sans encaissement)')}
+                 </Button>
+               </div>
             </div>
           </div>
         )}
@@ -492,10 +516,11 @@ export default function CheckIn() {
           </div>
         )}
       </div>
+      </div>
 
       {/* Printable Badge and Receipt only visible when printing */}
       {step === 4 && successData && selectedClient && (
-        <div className="hidden print:flex flex-col gap-10 absolute inset-0 bg-white z-50 p-10 print:p-0">
+        <div className="hidden print:flex flex-col gap-10 bg-white p-10 print:p-0">
           {/* Badge */}
           <div className="border-[3px] border-emerald-800 rounded-xl w-[320px] mx-auto overflow-hidden shadow-none print:shadow-none bg-white">
              <div className="bg-emerald-800 text-white text-center py-4 print:bg-emerald-800 print:text-white" style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
@@ -555,9 +580,21 @@ export default function CheckIn() {
                   </tbody>
                   <tfoot>
                      <tr className="text-lg font-bold">
-                        <td className="pt-4 text-right pr-4">TOTAL</td>
+                        <td className="pt-4 text-right pr-4">TOTAL A PAYER</td>
                         <td className="pt-4 text-right">{(simulationResult.total).toLocaleString()} DZD</td>
                      </tr>
+                     {formData.montant_encaisse > 0 ? (
+                       <>
+                         <tr className="text-lg font-bold text-emerald-700">
+                            <td className="pt-2 text-right pr-4">MONTANT ENCAISSÉ</td>
+                            <td className="pt-2 text-right">{(formData.montant_encaisse).toLocaleString()} DZD</td>
+                         </tr>
+                         <tr className="text-lg font-bold text-red-600">
+                            <td className="pt-2 text-right pr-4">RESTE À PAYER</td>
+                            <td className="pt-2 text-right">{(simulationResult.total - formData.montant_encaisse).toLocaleString()} DZD</td>
+                         </tr>
+                       </>
+                     ) : null}
                   </tfoot>
                </table>
              )}
@@ -568,6 +605,6 @@ export default function CheckIn() {
         </div>
       )}
 
-    </div>
+    </>
   );
 }
