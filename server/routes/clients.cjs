@@ -86,13 +86,15 @@ router.post('/', async (req, res) => {
       } catch(e) {}
     }
 
-    if (data.est_etranger === 0 || data.est_etranger === '0' || data.est_etranger === false) {
-      if (!data.nin || !/^\\d{18}$/.test(data.nin)) {
-        return res.status(400).json({ error: 'Le NIN doit contenir exactement 18 chiffres numériques' });
-      }
-    } else {
-      if (!data.num_piece || data.num_piece.trim().length < 5) {
-        return res.status(400).json({ error: 'Le numéro de pièce doit contenir au moins 5 caractères' });
+    if (!data.is_quick_create || !authAgentId) {
+      if (data.est_etranger === 0 || data.est_etranger === '0' || data.est_etranger === false) {
+        if (!data.nin || !/^\\d{18}$/.test(data.nin)) {
+          return res.status(400).json({ error: 'Le NIN doit contenir exactement 18 chiffres numériques' });
+        }
+      } else {
+        if (!data.num_piece || data.num_piece.trim().length < 5) {
+          return res.status(400).json({ error: 'Le numéro de pièce doit contenir au moins 5 caractères' });
+        }
       }
     }
 
