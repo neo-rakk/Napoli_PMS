@@ -81,7 +81,8 @@ router.post('/', async (req, res) => {
     if (req.headers.authorization) {
       const jwt = require('jsonwebtoken');
       try {
-        const decoded = jwt.verify(req.headers.authorization.split(' ')[1], process.env.JWT_SECRET);
+        const JWT_SECRET = process.env.JWT_SECRET || process.env.SUPABASE_JWT_SECRET || 'votre-secret-local-dev';
+        const decoded = jwt.verify(req.headers.authorization.split(' ')[1], JWT_SECRET);
         authAgentId = decoded.id;
       } catch(e) {}
     }
