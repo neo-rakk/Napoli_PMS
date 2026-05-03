@@ -117,80 +117,90 @@ export default function HousekeepingPlanning() {
   };
 
   const generatePDFGlobal = () => {
-    const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text(`Planning Général Housekeeping - ${new Date(date).toLocaleDateString('fr-FR')}`, 14, 20);
+    try {
+      const doc = new jsPDF();
+      doc.setFontSize(18);
+      doc.text(`Planning Général Housekeeping - ${new Date(date).toLocaleDateString('fr-FR')}`, 14, 20);
 
-    const tableData = chambres.filter(c => visibleChambreIds.includes(c.id)).map(c => {
-       const assign = assignments[c.id];
-       let typ = assign?.type || '';
-       let agent = '';
-       if (assign?.agent_id) {
-          const a = agents.find(ag => ag.id.toString() === assign.agent_id.toString());
-          if (a) agent = `${a.prenom} ${a.nom}`;
-       }
-       return [
-          c.bloc_nom || 'N/A',
-          c.numero,
-          c.is_checkout ? 'OUI' : 'NON',
-          typ.toUpperCase(),
-          agent,
-          '' // Empty space for notes/signature
-       ];
-    });
+      const tableData = chambres.filter(c => visibleChambreIds.some(vid => vid.toString() === c.id.toString())).map(c => {
+         const assign = assignments[c.id];
+         let typ = assign?.type || '';
+         let agent = '';
+         if (assign?.agent_id) {
+            const a = agents.find(ag => ag.id.toString() === assign.agent_id.toString());
+            if (a) agent = `${a.prenom} ${a.nom}`;
+         }
+         return [
+            (c.bloc_nom || 'N/A').toString(),
+            (c.numero || '').toString(),
+            c.is_checkout ? 'OUI' : 'NON',
+            (typ || '').toUpperCase(),
+            agent,
+            '' // Empty space for notes/signature
+         ];
+      });
 
-    autoTable(doc, {
-      startY: 30,
-      head: [['Bloc', 'Chambre', 'Check-out Aujourd\'hui', 'Type', 'Gouvernante / Agent', 'Notes / Fait']],
-      body: tableData,
-      theme: 'grid',
-      headStyles: { fillColor: [88, 28, 135] }
-    });
+      autoTable(doc, {
+        startY: 30,
+        head: [['Bloc', 'Chambre', 'Check-out Aujourd\'hui', 'Type', 'Gouvernante / Agent', 'Notes / Fait']],
+        body: tableData,
+        theme: 'grid',
+        headStyles: { fillColor: [88, 28, 135] }
+      });
 
-    doc.save(`planning_hk_${date}.pdf`);
+      doc.save(`planning_hk_${date}.pdf`);
+    } catch (e) {
+      console.error(e);
+      alert('Erreur lors de la génération du PDF: ' + e.message);
+    }
   };
 
   const generatePDFAgent = (agentId) => {
-    const agent = agents.find(a => a.id.toString() === agentId.toString());
-    if (!agent) return;
+    try {
+      const agent = agents.find(a => a.id.toString() === agentId.toString());
+      if (!agent) return;
 
-    const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text(`Fiche de nettoyage - ${agent.prenom} ${agent.nom}`, 14, 20);
-    doc.setFontSize(12);
-    doc.text(`Date : ${new Date(date).toLocaleDateString('fr-FR')}`, 14, 28);
+      const doc = new jsPDF();
+      doc.setFontSize(18);
+      doc.text(`Fiche de nettoyage - ${agent.prenom} ${agent.nom}`, 14, 20);
+      doc.setFontSize(12);
+      doc.text(`Date : ${new Date(date).toLocaleDateString('fr-FR')}`, 14, 28);
 
-    const agentRooms = chambres.filter(c => {
-       const assign = assignments[c.id];
-       return visibleChambreIds.includes(c.id) && assign && assign.agent_id && assign.agent_id.toString() === agentId.toString() && assign.type;
-    });
+      const agentRooms = chambres.filter(c => {
+         const assign = assignments[c.id];
+         return visibleChambreIds.some(vid => vid.toString() === c.id.toString()) && assign && assign.agent_id && assign.agent_id.toString() === agentId.toString() && assign.type;
+      });
 
-    if (agentRooms.length === 0) {
-       alert("Cet agent n'a aucune chambre assignée !");
-       return;
+      if (agentRooms.length === 0) {
+         alert("Cet agent n'a aucune chambre assignée !");
+         return;
+      }
+
+      const tableData = agentRooms.map(c => {
+         const assign = assignments[c.id];
+         return [
+            (c.bloc_nom || 'N/A').toString(),
+            (c.numero || '').toString(),
+            c.is_checkout ? 'DÉPART' : (c.is_occupied ? 'RECOUCHE' : 'VIDE'),
+            (assign?.type || '').toUpperCase(),
+            '', // Status
+            ''  // Sign
+         ];
+      });
+
+      autoTable(doc, {
+        startY: 35,
+        head: [['Bloc', 'Chambre', 'Statut Chambre', 'Travail Demandé', 'Fait', 'Signature']],
+        body: tableData,
+        theme: 'grid',
+        headStyles: { fillColor: [88, 28, 135] }
+      });
+
+      doc.save(`fiche_hk_${agent.prenom}_${agent.nom}_${date}.pdf`);
+    } catch (e) {
+      console.error(e);
+      alert('Erreur lors de la génération du PDF: ' + e.message);
     }
-
-    const tableData = agentRooms.map(c => {
-       const assign = assignments[c.id];
-       return [
-          c.bloc_nom || 'N/A',
-          c.numero,
-          c.is_checkout ? 'DÉPART' : (c.is_occupied ? 'RECOUCHE' : 'VIDE'),
-          assign?.type?.toUpperCase() || '',
-          '', // Status
-          ''  // Sign
-       ];
-    });
-
-    autoTable(doc, {
-      startY: 35,
-      head: [['Bloc', 'Chambre', 'Statut Chambre', 'Travail Demandé', 'Fait', 'Signature']],
-      body: tableData,
-      theme: 'grid',
-      headStyles: { fillColor: [88, 28, 135] }
-    });
-
-    doc.save(`fiche_hk_${agent.prenom}_${agent.nom}_${date}.pdf`);
   };
 
   return (
@@ -236,7 +246,7 @@ export default function HousekeepingPlanning() {
           <tbody className="divide-y divide-slate-100">
             {loading ? (
                <tr><td colSpan="5" className="text-center py-8">Chargement...</td></tr>
-            ) : chambres.filter(c => visibleChambreIds.includes(c.id)).map(c => {
+            ) : chambres.filter(c => visibleChambreIds.some(vid => vid.toString() === c.id.toString())).map(c => {
                const assign = assignments[c.id] || {};
                return (
                  <tr key={c.id} className="hover:bg-slate-50 transition-colors">
@@ -294,15 +304,15 @@ export default function HousekeepingPlanning() {
              onChange={e => setChambreToAdd(e.target.value)}
            >
              <option value="">Sélectionner une chambre...</option>
-             {chambres.filter(c => !visibleChambreIds.includes(c.id)).map(c => (
+             {chambres.filter(c => !visibleChambreIds.some(vid => vid.toString() === c.id.toString())).map(c => (
                 <option key={c.id} value={c.id}>{c.bloc_nom} - Ch. {c.numero} {c.is_occupied ? '(Occupée)' : ''}</option>
              ))}
            </select>
            <Button 
              variant="outline" 
              onClick={() => {
-                if (chambreToAdd && !visibleChambreIds.includes(parseInt(chambreToAdd))) {
-                   setVisibleChambreIds([...visibleChambreIds, parseInt(chambreToAdd)]);
+                if (chambreToAdd && !visibleChambreIds.some(vid => vid.toString() === chambreToAdd.toString())) {
+                   setVisibleChambreIds([...visibleChambreIds, chambreToAdd]);
                    setChambreToAdd('');
                 }
              }}
