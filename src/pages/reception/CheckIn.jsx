@@ -3,6 +3,7 @@ import { useAuthStore } from '../../store/authStore';
 import { Button } from '../../components/ui/Button';
 import { useLocation } from 'react-router-dom';
 import { Edit3, Save, Printer } from 'lucide-react';
+import { generateBadgePDF, generateReceiptPDF } from '../../lib/pdfGenerator';
 
 export default function CheckIn() {
   const { token } = useAuthStore();
@@ -509,122 +510,27 @@ export default function CheckIn() {
              
              <div className="flex justify-center gap-4">
                 <Button onClick={() => {
-                  const printContent = document.getElementById('print-area');
-                  if(!printContent) return;
-                  printContent.style.visibility = 'visible';
-                  const originalDisplay = printContent.style.display;
-                  printContent.style.display = 'block';
-                  
-                  import('html2canvas').then(({default: html2canvas}) => {
-                     import('jspdf').then(({jsPDF}) => {
-                        html2canvas(printContent, { scale: 2 }).then(canvas => {
-                           const imgData = canvas.toDataURL('image/png');
-                           const pdf = new jsPDF('p', 'mm', 'a4');
-                           const pdfWidth = pdf.internal.pageSize.getWidth();
-                           const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-                           pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-                           pdf.save(`CheckIn_${selectedClient.nom}_Ch${successData.chambreNum}.pdf`);
-                           
-                           printContent.style.visibility = 'hidden';
-                           printContent.style.display = originalDisplay;
-                        });
-                     });
-                  });
+                  generateBadgePDF(selectedClient, successData.chambreNum, formData.formule, formData.date_checkout_prevu);
                 }} variant="primary" size="lg">
-                  <Printer className="w-5 h-5 mr-2" /> Télécharger Badge / Reçu (PDF)
+                  <Printer className="w-5 h-5 mr-2" /> Télécharger Badge
                 </Button>
-                <Button onClick={() => window.location.reload()} variant="secondary" size="lg">Nouveau Check-In</Button>
+                <Button onClick={() => {
+                  generateReceiptPDF(selectedClient, {
+                     ...simulationResult,
+                     chambreNum: successData.chambreNum,
+                     formule: formData.formule,
+                     montant_encaisse: parseFloat(formData.montant_encaisse) || 0,
+                     reservationId: successData.reservationId
+                  });
+                }} variant="secondary" size="lg">
+                  <Printer className="w-5 h-5 mr-2" /> Télécharger Reçu
+                </Button>
+                <Button onClick={() => window.location.reload()} variant="primary" size="lg" className="ml-4">Nouveau Check-In</Button>
              </div>
           </div>
         )}
       </div>
       </div>
-
-      {step === 4 && successData && selectedClient && (
-        <div id="print-area" className="flex flex-col gap-10 bg-white p-10" style={{ position: 'absolute', top: '-9999px', visibility: 'hidden' }}>
-          {/* Badge */}
-          <div className="border-[3px] border-emerald-800 rounded-xl w-[320px] mx-auto overflow-hidden shadow-none print:shadow-none bg-white">
-             <div className="bg-emerald-800 text-white text-center py-4 print:bg-emerald-800 print:text-white" style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
-               <div className="text-sm tracking-widest font-bold">VILLAGE OLYMPIQUE</div>
-               <div className="text-xs text-emerald-200">NAPOLI 2026</div>
-             </div>
-             <div className="p-4 bg-white text-center">
-               {selectedClient.photo_selfie && (
-                 <img src={selectedClient.photo_selfie} alt="Client" className="w-32 h-32 object-cover rounded-full mx-auto border-4 border-slate-100 mb-4" />
-               )}
-               <h2 className="text-2xl font-black text-slate-900 uppercase leading-tight mb-2">{selectedClient.nom}<br/>{selectedClient.prenom}</h2>
-               {selectedClient.est_mineur === 1 && <div className="bg-red-600 text-white font-bold text-xs py-1 px-4 rounded-full inline-block mb-3 print:bg-red-600">MINEUR</div>}
-               <hr className="my-4 border-slate-200" />
-               <div className="text-4xl font-black font-mono tracking-tight text-slate-900">{successData.chambreNum}</div>
-               <div className="text-sm text-slate-500 font-bold uppercase mt-1 mb-4">Chambre</div>
-               <div className="grid grid-cols-2 gap-2 text-xs font-bold text-slate-600 text-left bg-slate-50 print:bg-slate-50 p-3 rounded" style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
-                  <div>FORMULE:</div><div className="text-right text-emerald-700">{formData.formule}</div>
-                  <div>SANG:</div><div className="text-right text-red-600">{selectedClient.groupe_sanguin}</div>
-                  <div>DÉPART:</div><div className="text-right">{new Date(formData.date_checkout_prevu).toLocaleDateString('fr-FR')}</div>
-               </div>
-             </div>
-          </div>
-          
-          {/* Payment Receipt */}
-          <div className="border border-slate-300 w-full max-w-2xl mx-auto p-8 rounded-lg bg-white print:border-none print:pt-16">
-             <div className="text-center mb-6">
-                <h1 className="text-2xl font-black uppercase text-slate-800">Reçu de Paiement</h1>
-                <p className="text-slate-500 text-sm">VILLAGE OLYMPIQUE NAPOLI 2026</p>
-             </div>
-             <div className="flex justify-between text-sm mb-8 border-b pb-4">
-                <div>
-                   <p className="font-bold">Client : {selectedClient.nom} {selectedClient.prenom}</p>
-                   <p className="text-slate-500">ID : {selectedClient.est_etranger ? selectedClient.num_piece : selectedClient.nin}</p>
-                </div>
-                <div className="text-right">
-                   <p className="font-bold">Date : {new Date().toLocaleDateString('fr-FR')}</p>
-                   <p className="text-slate-500">Réservation N° : {successData.reservationId}</p>
-                </div>
-             </div>
-             {simulationResult && (
-               <table className="w-full text-sm mb-8">
-                  <thead>
-                     <tr className="border-b text-left text-slate-500">
-                        <th className="font-medium pb-2">Description</th>
-                        <th className="font-medium pb-2 text-right">Montant</th>
-                     </tr>
-                  </thead>
-                  <tbody>
-                     <tr className="border-b">
-                        <td className="py-3">Hébergement ({simulationResult.nuits} nuit(s) - Chambre {successData.chambreNum})</td>
-                        <td className="py-3 text-right">{(simulationResult.total_nuit).toLocaleString()} DZD</td>
-                     </tr>
-                     <tr className="border-b">
-                        <td className="py-3">Restauration (Formule {formData.formule} - {simulationResult.nuits} jour(s))</td>
-                        <td className="py-3 text-right">{(simulationResult.total_repas).toLocaleString()} DZD</td>
-                     </tr>
-                  </tbody>
-                  <tfoot>
-                     <tr className="text-lg font-bold">
-                        <td className="pt-4 text-right pr-4">TOTAL A PAYER</td>
-                        <td className="pt-4 text-right">{(simulationResult.total).toLocaleString()} DZD</td>
-                     </tr>
-                     {formData.montant_encaisse > 0 ? (
-                       <>
-                         <tr className="text-lg font-bold text-emerald-700">
-                            <td className="pt-2 text-right pr-4">MONTANT ENCAISSÉ</td>
-                            <td className="pt-2 text-right">{(formData.montant_encaisse).toLocaleString()} DZD</td>
-                         </tr>
-                         <tr className="text-lg font-bold text-red-600">
-                            <td className="pt-2 text-right pr-4">RESTE À PAYER</td>
-                            <td className="pt-2 text-right">{(simulationResult.total - formData.montant_encaisse).toLocaleString()} DZD</td>
-                         </tr>
-                       </>
-                     ) : null}
-                  </tfoot>
-               </table>
-             )}
-             <div className="text-center text-xs text-slate-400 mt-16 italic">
-                Ceci est une attestation officielle délivrée par le Village Olympique Napoli 2026.
-             </div>
-          </div>
-        </div>
-      )}
 
     </>
   );

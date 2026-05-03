@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { Button } from '../../components/ui/Button';
+import { Printer } from 'lucide-react';
+import { generateBadgePDF, generateReceiptPDF } from '../../lib/pdfGenerator';
 
 export default function CheckOut() {
   const { token } = useAuthStore();
@@ -251,6 +253,24 @@ export default function CheckOut() {
                </div>
               )
             )}
+
+            <div className="mt-6 pt-6 border-t border-slate-100 flex gap-2">
+               <Button className="flex-1" variant="secondary" size="sm" onClick={() => generateBadgePDF(selectedRes, soldeInfo.chambre, selectedRes.formule, selectedRes.date_checkout_prevu)}>
+                  <Printer className="w-4 h-4 mr-2" /> Badge
+               </Button>
+               <Button className="flex-1" variant="secondary" size="sm" onClick={() => generateReceiptPDF(selectedRes, {
+                  reservationId: selectedRes.reservation_id,
+                  chambreNum: soldeInfo.chambre,
+                  formule: selectedRes.formule,
+                  nuits: soldeInfo.nuits,
+                  total_nuit: soldeInfo.total_nuit,
+                  total_repas: soldeInfo.total_repas,
+                  total: soldeInfo.total_theorique,
+                  montant_encaisse: soldeInfo.total_paye
+               })}>
+                  <Printer className="w-4 h-4 mr-2" /> Reçu
+               </Button>
+            </div>
           </div>
         ) : (
           <div className="bg-slate-50 rounded-xl border border-dashed border-slate-300 h-64 flex items-center justify-center text-slate-400 text-sm p-8 text-center sticky top-8">

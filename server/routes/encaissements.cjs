@@ -89,7 +89,7 @@ router.post('/groupe', requireAuth, requireRole('accueil', 'admin', 'caisse'), a
 router.get('/pending', requireAuth, async (req, res) => {
   try {
     const result = await db.all(`
-      SELECT r.id as reservation_id, c.nom, c.prenom, ch.numero as chambre,
+      SELECT r.id as reservation_id, c.nom, c.prenom, c.num_piece, c.nin, c.est_etranger, c.photo_selfie, c.groupe_sanguin, c.est_mineur, ch.numero as chambre,
              r.date_arrivee, r.date_checkout_prevu, r.formule, r.mode_facturation,
              r.prix_nuit_applique, r.prix_repas_applique, r.statut,
              COALESCE((SELECT SUM(e.montant) FROM encaissements e WHERE e.reservation_id = r.id AND e.annule = 0), 0) as deja_paye

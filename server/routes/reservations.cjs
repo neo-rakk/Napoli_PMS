@@ -329,7 +329,9 @@ router.get('/:id/solde', requireAuth, async (req, res) => {
     let nuits = Math.ceil((end_date - start_date) / 86400000);
     if (nuits < 1) nuits = 1;
 
-    const total_theorique = nuits * ((reservationRes.prix_nuit_applique || 0) + (reservationRes.prix_repas_applique || 0));
+    const total_nuit = nuits * (reservationRes.prix_nuit_applique || 0);
+    const total_repas = nuits * (reservationRes.prix_repas_applique || 0);
+    const total_theorique = total_nuit + total_repas;
     
     const encaissementsRes = await db.all("SELECT * FROM encaissements WHERE reservation_id = $1 AND annule = 0", [req.params.id]);
     let total_paye = 0;
@@ -340,6 +342,8 @@ router.get('/:id/solde', requireAuth, async (req, res) => {
       chambre: reservationRes.chambre_numero,
       client: `${reservationRes.nom} ${reservationRes.prenom}`,
       nuits,
+      total_nuit,
+      total_repas,
       total_theorique,
       total_paye,
       solde: total_theorique - total_paye,
