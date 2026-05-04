@@ -6,33 +6,34 @@ const formatNumber = (num) => {
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 };
 
-// Converts text (e.g. Arabic) into an image using canvas to ensure correct text-shaping and RTL
-const textToImage = (text, width, height, font, color = '#000000', align = 'center', lineHeight = 1.2) => {
-  const canvas = document.createElement('canvas');
-  const scale = 4; // High resolution
-  canvas.width = width * scale;
-  canvas.height = height * scale;
-  const ctx = canvas.getContext('2d');
-  ctx.scale(scale, scale);
-  ctx.fillStyle = color;
-  ctx.font = font;
-  ctx.textAlign = align;
-  ctx.textBaseline = 'middle';
-  const x = align === 'center' ? width / 2 : (align === 'right' ? width : 0);
+let arabicFontBase64 = null;
+let arabicBoldFontBase64 = null;
+
+const loadArabicFonts = async (pdf) => {
+  const fetchFontAsBase64 = async (url) => {
+    const res = await fetch(url);
+    const buffer = await res.arrayBuffer();
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    const chunk = 4096;
+    for (let i = 0; i < bytes.length; i += chunk) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+    }
+    return btoa(binary);
+  };
+
+  if (!arabicFontBase64) {
+    arabicFontBase64 = await fetchFontAsBase64('https://raw.githubusercontent.com/googlefonts/noto-fonts/main/hinted/ttf/NotoSansArabic/NotoSansArabic-Regular.ttf');
+  }
+  if (!arabicBoldFontBase64) {
+    arabicBoldFontBase64 = await fetchFontAsBase64('https://raw.githubusercontent.com/googlefonts/noto-fonts/main/hinted/ttf/NotoSansArabic/NotoSansArabic-Bold.ttf');
+  }
+
+  pdf.addFileToVFS('NotoSansArabic-Regular.ttf', arabicFontBase64);
+  pdf.addFont('NotoSansArabic-Regular.ttf', 'NotoSansArabic', 'normal');
   
-  const fontSizeMatch = font.match(/(\d+)px/);
-  const fontSize = fontSizeMatch ? parseInt(fontSizeMatch[1]) : 12;
-  
-  const lines = text.split('\n');
-  const totalHeight = lines.length * fontSize * lineHeight;
-  let startY = (height - totalHeight) / 2 + (fontSize / 2);
-  
-  lines.forEach((line) => {
-    ctx.fillText(line, x, startY);
-    startY += fontSize * lineHeight;
-  });
-  
-  return canvas.toDataURL('image/png');
+  pdf.addFileToVFS('NotoSansArabic-Bold.ttf', arabicBoldFontBase64);
+  pdf.addFont('NotoSansArabic-Bold.ttf', 'NotoSansArabic', 'bold');
 };
 
 export const generateBadgePDF = async (client, chambreNum, formule, dateDepart) => {
@@ -40,16 +41,18 @@ export const generateBadgePDF = async (client, chambreNum, formule, dateDepart) 
   // Actually standard CR80 is 54mm x 86mm (portrait).
   const pdf = new jsPDF('p', 'mm', [54, 86]);
 
+  await loadArabicFonts(pdf);
+
   pdf.setFillColor(6, 78, 59); // emerald-800
   pdf.rect(0, 0, 54, 15, 'F');
   
   pdf.setTextColor(255, 255, 255);
   pdf.setFontSize(10);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('VILLAGE OLYMPIQUE', 27, 8, { align: 'center' });
+  pdf.setFont('NotoSansArabic', 'bold');
+  pdf.text(pdf.processArabic('VILLAGE OLYMPIQUE'), 27, 8, { align: 'center' });
   pdf.setFontSize(7);
-  pdf.setFont('helvetica', 'normal');
-  pdf.text('NAPOLI 2026', 27, 12, { align: 'center' });
+  pdf.setFont('NotoSansArabic', 'normal');
+  pdf.text(pdf.processArabic('NAPOLI 2026'), 27, 12, { align: 'center' });
 
   // Photo
   let cursorY = 20;
@@ -63,30 +66,35 @@ export const generateBadgePDF = async (client, chambreNum, formule, dateDepart) 
   }
 
   // Name
-  const nameText = `${client.nom}\n${client.prenom}`.toUpperCase();
-  const nameImg = textToImage(nameText, 50, 15, "bold 14px sans-serif", "#0f172a", "center");
-  pdf.addImage(nameImg, 'PNG', 2, cursorY - 5, 50, 15);
-  cursorY += 10;
+  pdf.setTextColor(15, 23, 42); // slate-900
+  pdf.setFont('NotoSansArabic', 'bold');
+  pdf.setFontSize(14);
+  const nameText1 = client.nom.toUpperCase();
+  const nameText2 = client.prenom.toUpperCase();
+  pdf.text(pdf.processArabic(nameText1), 27, cursorY, { align: 'center' });
+  pdf.text(pdf.processArabic(nameText2), 27, cursorY + 6, { align: 'center' });
+  cursorY += 12;
 
   if (client.est_mineur === 1) {
     pdf.setFillColor(220, 38, 38); // red-600
     pdf.rect(17, cursorY - 4, 20, 5, 'F');
     pdf.setTextColor(255, 255, 255);
+    pdf.setFont('NotoSansArabic', 'normal');
     pdf.setFontSize(8);
-    pdf.text('MINEUR', 27, cursorY - 0.5, { align: 'center' });
+    pdf.text(pdf.processArabic('MINEUR'), 27, cursorY - 0.5, { align: 'center' });
     cursorY += 4;
   }
 
   // Room
   pdf.setTextColor(15, 23, 42);
   pdf.setFontSize(22);
-  pdf.setFont('courier', 'bold');
+  pdf.setFont('helvetica', 'bold');
   pdf.text(chambreNum, 27, cursorY + 6, { align: 'center' });
   
   pdf.setFontSize(7);
-  pdf.setFont('helvetica', 'bold');
+  pdf.setFont('NotoSansArabic', 'bold');
   pdf.setTextColor(100, 116, 139);
-  pdf.text('CHAMBRE', 27, cursorY + 10, { align: 'center' });
+  pdf.text(pdf.processArabic('CHAMBRE'), 27, cursorY + 10, { align: 'center' });
   cursorY += 15;
 
   // Formule / Sang / Depart
@@ -94,19 +102,25 @@ export const generateBadgePDF = async (client, chambreNum, formule, dateDepart) 
   pdf.rect(3, cursorY, 48, 15, 'F');
   
   pdf.setFontSize(6);
+  pdf.setFont('NotoSansArabic', 'normal');
   pdf.setTextColor(71, 85, 105);
-  pdf.text('FORMULE:', 5, cursorY + 4);
+  pdf.text(pdf.processArabic('FORMULE:'), 5, cursorY + 4);
   pdf.setTextColor(4, 120, 87);
+  pdf.setFont('helvetica', 'bold');
   pdf.text(formule || 'N/A', 50, cursorY + 4, { align: 'right' });
 
+  pdf.setFont('NotoSansArabic', 'normal');
   pdf.setTextColor(71, 85, 105);
-  pdf.text('SANG:', 5, cursorY + 8);
+  pdf.text(pdf.processArabic('SANG:'), 5, cursorY + 8);
   pdf.setTextColor(220, 38, 38);
+  pdf.setFont('helvetica', 'bold');
   pdf.text(client.groupe_sanguin || 'N/A', 50, cursorY + 8, { align: 'right' });
 
+  pdf.setFont('NotoSansArabic', 'normal');
   pdf.setTextColor(71, 85, 105);
-  pdf.text('DEP.:', 5, cursorY + 12);
+  pdf.text(pdf.processArabic('DEP.:'), 5, cursorY + 12);
   pdf.setTextColor(15, 23, 42);
+  pdf.setFont('helvetica', 'bold');
   pdf.text(new Date(dateDepart).toLocaleDateString('fr-FR'), 50, cursorY + 12, { align: 'right' });
 
   // QR Code Generation
@@ -126,27 +140,32 @@ export const generateBadgePDF = async (client, chambreNum, formule, dateDepart) 
   pdf.save(`Badge_${client.nom}_Ch${chambreNum}.pdf`);
 };
 
-export const generateReceiptPDF = (client, reservationInfo) => {
+export const generateReceiptPDF = async (client, reservationInfo) => {
   const pdf = new jsPDF('p', 'mm', 'a4');
   
+  await loadArabicFonts(pdf);
+  
   pdf.setFontSize(18);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('RECU DE PAIEMENT', 105, 20, { align: 'center' });
+  pdf.setFont('NotoSansArabic', 'bold');
+  pdf.text(pdf.processArabic('RECU DE PAIEMENT'), 105, 20, { align: 'center' });
   
   pdf.setFontSize(10);
-  pdf.setFont('helvetica', 'normal');
+  pdf.setFont('NotoSansArabic', 'normal');
   pdf.setTextColor(100, 100, 100);
-  pdf.text('VILLAGE OLYMPIQUE NAPOLI 2026', 105, 26, { align: 'center' });
+  pdf.text(pdf.processArabic('VILLAGE OLYMPIQUE NAPOLI 2026'), 105, 26, { align: 'center' });
   
   pdf.setTextColor(0, 0, 0);
   const clientNameText = `Client : ${client.nom} ${client.prenom}`;
-  const clientNameImg = textToImage(clientNameText, 170, 8, "12px sans-serif", "#000000", "left");
-  pdf.addImage(clientNameImg, 'PNG', 20, 35, 170, 8);
   
-  pdf.text(`ID : ${client.est_etranger ? client.num_piece : client.nin}`, 20, 46);
+  pdf.setFontSize(12);
+  pdf.setFont('NotoSansArabic', 'normal');
+  pdf.text(pdf.processArabic(clientNameText), 20, 40);
   
-  pdf.text(`Date : ${new Date().toLocaleDateString('fr-FR')}`, 190, 40, { align: 'right' });
-  pdf.text(`Réservation N° : ${reservationInfo.reservationId || reservationInfo.id}`, 190, 46, { align: 'right' });
+  pdf.setFont('NotoSansArabic', 'normal');
+  pdf.text(pdf.processArabic(`ID : ${client.est_etranger ? client.num_piece : client.nin}`), 20, 46);
+  
+  pdf.text(pdf.processArabic(`Date : ${new Date().toLocaleDateString('fr-FR')}`), 190, 40, { align: 'right' });
+  pdf.text(pdf.processArabic(`Réservation N° : ${reservationInfo.reservationId || reservationInfo.id}`), 190, 46, { align: 'right' });
   
   pdf.line(20, 52, 190, 52);
 
@@ -154,13 +173,13 @@ export const generateReceiptPDF = (client, reservationInfo) => {
   if (reservationInfo.nuits) {
     if (reservationInfo.total_nuit > 0) {
       tableData.push([
-        `Hébergement (${reservationInfo.nuits} nuit(s) - Chambre ${reservationInfo.chambreNum || reservationInfo.chambre})`,
+        pdf.processArabic(`Hébergement (${reservationInfo.nuits} nuit(s) - Chambre ${reservationInfo.chambreNum || reservationInfo.chambre})`),
         `${formatNumber(reservationInfo.total_nuit)} DZD`
       ]);
     }
     if (reservationInfo.total_repas > 0) {
       tableData.push([
-        `Restauration (Formule ${reservationInfo.formule || 'N/A'} - ${reservationInfo.nuits} jour(s))`,
+        pdf.processArabic(`Restauration (Formule ${reservationInfo.formule || 'N/A'} - ${reservationInfo.nuits} jour(s))`),
         `${formatNumber(reservationInfo.total_repas)} DZD`
       ]);
     }
@@ -168,24 +187,28 @@ export const generateReceiptPDF = (client, reservationInfo) => {
 
   pdf.autoTable({
     startY: 60,
-    head: [['Description', 'Montant']],
+    head: [[pdf.processArabic('Description'), pdf.processArabic('Montant')]],
     body: tableData,
     theme: 'grid',
+    styles: { font: 'NotoSansArabic' },
     headStyles: { fillColor: [241, 245, 249], textColor: [71, 85, 105], fontStyle: 'bold' },
     columnStyles: { 1: { halign: 'right' } }
   });
 
   let finalY = pdf.lastAutoTable.finalY + 10;
   
-  pdf.setFont('helvetica', 'bold');
+  pdf.setFont('NotoSansArabic', 'bold');
   pdf.setFontSize(12);
-  pdf.text('TOTAL A PAYER', 130, finalY);
+  pdf.text(pdf.processArabic('TOTAL A PAYER'), 130, finalY);
+  pdf.setFont('helvetica', 'bold');
   pdf.text(`${formatNumber(reservationInfo.total || reservationInfo.total_theorique)} DZD`, 190, finalY, { align: 'right' });
   
   if (reservationInfo.montant_encaisse !== undefined) {
     finalY += 8;
     pdf.setTextColor(4, 120, 87); // emerald-700
-    pdf.text('MONTANT ENCAISSÉ', 130, finalY);
+    pdf.setFont('NotoSansArabic', 'bold');
+    pdf.text(pdf.processArabic('MONTANT ENCAISSÉ'), 130, finalY);
+    pdf.setFont('helvetica', 'bold');
     pdf.text(`${formatNumber(reservationInfo.montant_encaisse || 0)} DZD`, 190, finalY, { align: 'right' });
     
     finalY += 8;
@@ -195,9 +218,17 @@ export const generateReceiptPDF = (client, reservationInfo) => {
     } else {
       pdf.setTextColor(0, 0, 0); 
     }
-    pdf.text('RESTE A PAYER', 130, finalY);
+    pdf.setFont('NotoSansArabic', 'bold');
+    pdf.text(pdf.processArabic('RESTE A PAYER'), 130, finalY);
+    pdf.setFont('helvetica', 'bold');
     pdf.text(`${formatNumber(reste)} DZD`, 190, finalY, { align: 'right' });
   }
+
+  finalY += 30;
+  pdf.setFont('NotoSansArabic', 'normal');
+  pdf.setFontSize(8);
+  pdf.setTextColor(150, 150, 150);
+  pdf.text(pdf.processArabic('Ceci est une attestation officielle délivrée par le Village Olympique Napoli 2026.'), 105, finalY, { align: 'center' });
 
   pdf.save(`Recu_${client.nom}_Ch${reservationInfo.chambreNum || reservationInfo.chambre}.pdf`);
 };
