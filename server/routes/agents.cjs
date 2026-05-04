@@ -12,9 +12,8 @@ const JWT_SECRET = process.env.JWT_SECRET || process.env.SUPABASE_JWT_SECRET || 
 // Liste des agents (public pour le login PIN, filtré pour admin)
 router.get('/', async (req, res) => {
   try {
-    const agents = await db.all("SELECT id, ('AGT-' || LPAD(id::text, 3, '0')) as code FROM agents WHERE actif = 1 ORDER BY id");
-    // Ne retourner QUE id et code — pas de rôle, pas de nom
-    res.json(agents.map(a => ({ id: a.id, code: a.code })));
+    const agents = await db.all("SELECT id, matricule, nom, prenom FROM agents WHERE actif = 1 ORDER BY nom, prenom");
+    res.json(agents.map(a => ({ id: a.id, code: a.matricule, nom: a.nom, prenom: a.prenom })));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
