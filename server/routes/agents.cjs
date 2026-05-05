@@ -106,9 +106,10 @@ router.post('/change-pin', requireAuth, async (req, res) => {
 
   try {
     const pinHash = await bcrypt.hash(newPin, 10);
-    await db.query("UPDATE agents SET pin_hash = $1, doit_changer_pin = 0 WHERE id = $2", [pinHash, req.user.id]);
+    await db.query("UPDATE agents SET pin_hash = $1, doit_changer_pin = 0 WHERE id = $2", [pinHash, req.agent.id]);
     res.json({ success: true });
   } catch (err) {
+    console.error("Change PIN Error:", err);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
