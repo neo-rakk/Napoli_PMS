@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { PinPad } from '../components/PinPad';
 import { useAuthStore } from '../store/authStore';
 import { Lock, User } from 'lucide-react';
+import { getRedirectRouteForRole } from '../lib/authUtils';
 
 export default function ReceptionLogin() {
   const [agents, setAgents] = useState([]);
@@ -52,7 +53,7 @@ export default function ReceptionLogin() {
         if (data.agent.doit_changer_pin) {
           navigate('/changer-pin');
         } else {
-          navigate(data.agent.role === 'admin' ? '/admin' : '/reception');
+          navigate(getRedirectRouteForRole(data.agent.role));
         }
       } else {
         setError(data.error || 'PIN incorrect');

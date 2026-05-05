@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { Button } from '../components/ui/Button';
 import { Lock, AlertCircle } from 'lucide-react';
+import { getRedirectRouteForRole } from '../lib/authUtils';
 
 export default function ChangerPin() {
   const { user, token, login } = useAuthStore();
@@ -17,7 +18,7 @@ export default function ChangerPin() {
     if (!user) {
       navigate('/reception/login');
     } else if (!user.doit_changer_pin) {
-      navigate(user.role === 'admin' ? '/admin' : '/reception');
+      navigate(getRedirectRouteForRole(user.role));
     }
   }, [user, navigate]);
 
@@ -48,7 +49,7 @@ export default function ChangerPin() {
       if (res.ok) {
         // Mettre à jour l'agent dans le store pour enlever l'obligation de changer
         login({ ...user, doit_changer_pin: 0 }, token);
-        navigate(user.role === 'admin' ? '/admin' : '/reception');
+        navigate(getRedirectRouteForRole(user.role));
       } else {
         const err = await res.json();
         setError(err.error || 'Erreur lors du changement de PIN');
