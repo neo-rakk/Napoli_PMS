@@ -116,7 +116,7 @@ router.post('/change-pin', requireAuth, async (req, res) => {
 
 router.get('/all', requireAuth, requireRole('admin'), async (req, res) => {
   try {
-    const agents = await db.all("SELECT id, nom, prenom, matricule, role, telephone, email FROM agents WHERE actif = 1");
+    const agents = await db.all("SELECT id, nom, prenom, matricule, role, telephone, email, actif FROM agents ORDER BY nom, prenom");
     res.json(agents);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -126,12 +126,40 @@ router.get('/all', requireAuth, requireRole('admin'), async (req, res) => {
 router.post('/', requireAuth, requireRole('admin'), async (req, res) => {
   try {
     const { nom, prenom, matricule, role, pin, telephone, email } = req.body;
-    const pinHash = await bcrypt.hash(pin, 10);
+    const pinHash = await db.client ? await bcrypt.hash(pin, 10) : await bcrypt.hash(pin, 10); // just to make sure we await properly
     
     await db.query(`
       INSERT INTO agents (nom, prenom, matricule, pin_hash, role, telephone, email)
       VALUES ($1, $2, $3, $4, $5, $6, $7)
     `, [nom, prenom, matricule, pinHash, role, telephone, email]);
+    res.json({ success: true });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.put('/:id', requireAuth, requireRole('admin'), async (req, res) => {
+  try {
+    const { nom, prenom, role, telephone, email } = req.body;
+    await db.query(`
+      UPDATE agents
+      SET nom = $1, prenom = $2, role = $3, telephone = $4, email = $5
+      WHERE id = $6
+    `, [nom, prenom, role, telephone, email, req.params.id]);
+    res.json({ success: true });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.put('/:id/toggle-actif', requireAuth, requireRole('admin'), async (req, res) => {
+  try {
+    const { actif } = req.body;
+    await db.query(`
+      UPDATE agents
+      SET actif = $1
+      WHERE id = $2
+    `, [actif, req.params.id]);
     res.json({ success: true });
   } catch(err) {
     res.status(500).json({ error: err.message });
