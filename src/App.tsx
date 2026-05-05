@@ -7,6 +7,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import ReceptionLogin from './pages/ReceptionLogin';
 import AdminLogin from './pages/AdminLogin';
 import PublicInscription from './pages/PublicInscription';
+import ChangerPin from './pages/ChangerPin';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 import ReceptionLayout from './layouts/ReceptionLayout';
@@ -63,6 +64,11 @@ export default function App() {
         {/* Auth routes */}
         <Route path="/reception/login" element={<ReceptionLogin />} />
         <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/changer-pin" element={
+          <ProtectedRoute>
+            <ChangerPin />
+          </ProtectedRoute>
+        } />
 
         {/* Reception layout */}
         <Route path="/reception" element={

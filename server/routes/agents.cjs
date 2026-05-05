@@ -12,7 +12,7 @@ const JWT_SECRET = process.env.JWT_SECRET || process.env.SUPABASE_JWT_SECRET || 
 // Liste des agents (public pour le login PIN, filtré pour admin)
 router.get('/', async (req, res) => {
   try {
-    const agents = await db.all("SELECT id, matricule, nom, prenom FROM agents WHERE actif = 1 ORDER BY nom, prenom");
+    const agents = await db.all("SELECT id, COALESCE(matricule, 'AGT-' || LPAD(id::text, 3, '0')) as matricule, nom, prenom FROM agents WHERE actif = 1 ORDER BY nom, prenom");
     res.json(agents.map(a => ({ id: a.id, code: a.matricule, nom: a.nom, prenom: a.prenom })));
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -96,6 +96,22 @@ router.post('/auth/supabase-admin', async (req, res) => {
 });
 
 // Autre routes (Create, Update) à compléter...
+
+// Changer PIN
+router.post('/change-pin', requireAuth, async (req, res) => {
+  const { newPin } = req.body;
+  if (!newPin || newPin.length !== 6) {
+    return res.status(400).json({ error: 'Le PIN doit comporter 6 chiffres' });
+  }
+
+  try {
+    const pinHash = await bcrypt.hash(newPin, 10);
+    await db.query("UPDATE agents SET pin_hash = $1, doit_changer_pin = 0 WHERE id = $2", [pinHash, req.user.id]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
 
 router.get('/all', requireAuth, requireRole('admin'), async (req, res) => {
   try {
