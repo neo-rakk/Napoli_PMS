@@ -5,7 +5,7 @@ import { Button } from '../components/ui/Button';
 import { Lock, AlertCircle } from 'lucide-react';
 
 export default function ChangerPin() {
-  const { agent, token, login } = useAuthStore();
+  const { user, token, login } = useAuthStore();
   const navigate = useNavigate();
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
@@ -14,12 +14,12 @@ export default function ChangerPin() {
 
   // Rediriger si on ne devrait pas être là
   React.useEffect(() => {
-    if (!agent) {
+    if (!user) {
       navigate('/reception/login');
-    } else if (!agent.doit_changer_pin) {
-      navigate(agent.role === 'admin' ? '/admin' : '/reception');
+    } else if (!user.doit_changer_pin) {
+      navigate(user.role === 'admin' ? '/admin' : '/reception');
     }
-  }, [agent, navigate]);
+  }, [user, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -47,8 +47,8 @@ export default function ChangerPin() {
 
       if (res.ok) {
         // Mettre à jour l'agent dans le store pour enlever l'obligation de changer
-        login({ ...agent, doit_changer_pin: 0 }, token);
-        navigate(agent.role === 'admin' ? '/admin' : '/reception');
+        login({ ...user, doit_changer_pin: 0 }, token);
+        navigate(user.role === 'admin' ? '/admin' : '/reception');
       } else {
         const err = await res.json();
         setError(err.error || 'Erreur lors du changement de PIN');
@@ -60,7 +60,7 @@ export default function ChangerPin() {
     }
   };
 
-  if (!agent) return null;
+  if (!user) return null;
 
   return (
     <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
