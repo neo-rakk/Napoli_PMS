@@ -31,6 +31,7 @@ import AdminReports from './pages/admin/AdminReports';
 import AdminTarifs from './pages/admin/AdminTarifs';
 import AuditLogs from './pages/admin/AuditLogs';
 import AdminPOS from './pages/admin/AdminPOS';
+import Preuves from './pages/admin/Preuves';
 import MaintenanceReception from './pages/reception/MaintenanceReception';
 
 import HousekeepingLayout from './layouts/HousekeepingLayout';
@@ -104,6 +105,7 @@ export default function App() {
           <Route path="stocks" element={<AdminStock />} />
           <Route path="pos" element={<AdminPOS />} />
           <Route path="rapports" element={<AdminReports />} />
+          <Route path="preuves" element={<Preuves />} />
           <Route path="parametres" element={<AuditLogs />} />
         </Route>
 

@@ -3,6 +3,7 @@ import { useAuthStore } from '../../store/authStore';
 import { Camera, MapPin, AlertTriangle, CheckCircle, PackageSearch, PenTool, Download } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { generateBilan } from '../../lib/pdfBilan';
+import CameraCapture from '../../components/CameraCapture';
 
 export default function MaintenanceDashboard() {
   const { user, token } = useAuthStore();
@@ -16,8 +17,8 @@ export default function MaintenanceDashboard() {
   const [achatsForm, setAchatsForm] = useState(false);
   const [newAchat, setNewAchat] = useState({ designation: '', quantite: 1, urgence: 'normale' });
   const [rapportText, setRapportText] = useState('');
-  // We simulate photo taking via an input
   const [photoRap, setPhotoRap] = useState('');
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
 
   const fetchTaches = async () => {
     setLoading(true);
@@ -263,12 +264,24 @@ export default function MaintenanceDashboard() {
                   ></textarea>
 
                   <div className="flex items-center justify-center w-full">
-                      <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-neutral-300 rounded-xl cursor-pointer bg-neutral-50 hover:bg-neutral-100 transition-colors">
-                          <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                              <Camera className="w-8 h-8 mb-3 text-neutral-400" />
-                              <p className="mb-2 text-sm text-neutral-500 font-bold"><span className="text-neutral-700">Cliquez</span> pour prendre la photo de validation</p>
-                          </div>
-                      </label>
+                      {photoRap ? (
+  <div className="relative w-full h-40 rounded-xl overflow-hidden mb-4 border border-neutral-200">
+    <img src={photoRap} className="w-full h-full object-cover" alt="Preuve" />
+    <Button 
+      className="absolute top-2 right-2 bg-red-600/80 hover:bg-red-600 text-white" 
+      size="sm" 
+      onClick={(e) => { e.preventDefault(); setPhotoRap('');}}>
+      Retirer
+    </Button>
+  </div>
+) : (
+  <button type="button" onClick={() => setIsCameraOpen(true)} className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-neutral-300 rounded-xl cursor-pointer bg-neutral-50 hover:bg-neutral-100 transition-colors">
+    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+      <Camera className="w-8 h-8 mb-3 text-neutral-400" />
+      <p className="mb-2 text-sm text-neutral-500 font-bold"><span className="text-neutral-700">Cliquez</span> pour prendre la photo de validation</p>
+    </div>
+  </button>
+)}
                   </div>
                </div>
             </div>
@@ -276,12 +289,22 @@ export default function MaintenanceDashboard() {
             <div className="p-6 bg-neutral-50 border-t border-neutral-100">
                <Button className="w-full bg-green-600 hover:bg-green-700 h-14 text-lg font-black tracking-widest uppercase shadow-xl shadow-green-600/20" 
                        onClick={handleResolveTask} 
-                       disabled={!rapportText}>
+                       disabled={!rapportText || !photoRap}>
                  Terminer l'intervention
                </Button>
             </div>
           </div>
         </div>
+      )}
+
+      {isCameraOpen && (
+        <CameraCapture 
+           isOpen={isCameraOpen} 
+           onClose={() => setIsCameraOpen(false)} 
+           onCapture={(photo) => setPhotoRap(photo)} 
+           cameraType="environment"
+           title="Preuve d'intervention"
+        />
       )}
 
     </div>

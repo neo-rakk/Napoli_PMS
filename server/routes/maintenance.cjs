@@ -145,6 +145,25 @@ router.get('/report/bilan', requireAuth, async (req, res) => {
   }
 });
 
+// Admin: Récupérer toutes les preuves
+router.get('/admin/preuves', requireAuth, requireRole('admin'), async (req, res) => {
+  try {
+    const preuves = await db.all(`
+      SELECT m.id, m.localisation, m.photo_reparation, m.rapport, m.date_resolution, m.photo_preuve_timestamp, m.updated_at,
+             c.numero as chambre_numero, c.bloc as chambre_bloc,
+             a.nom as agent_nom, a.prenom as agent_prenom
+      FROM maintenance m
+      LEFT JOIN chambres c ON m.chambre_id = c.id
+      LEFT JOIN agents a ON m.assigne_a = a.id
+      WHERE m.statut = 'resolu' AND m.photo_reparation IS NOT NULL AND m.photo_reparation != '' AND m.photo_reparation != 'photo_url_simulee.jpg'
+      ORDER BY COALESCE(m.date_resolution, m.updated_at) DESC
+    `);
+    res.json(preuves);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Admin: Remise a zero des bilans
 router.post('/admin/reset-bilans', requireAuth, requireRole('admin'), async (req, res) => {
   try {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
-import { LayoutDashboard, Users, UserCog, Building, DollarSign, Settings, LogOut, PackageSearch, TrendingUp, BadgeDollarSign, Coffee, ShieldCheck, Home, Wrench, Menu, Bell } from 'lucide-react';
+import { LayoutDashboard, Users, UserCog, Building, DollarSign, Settings, LogOut, PackageSearch, TrendingUp, BadgeDollarSign, Coffee, ShieldCheck, Home, Wrench, Menu, Bell, Camera } from 'lucide-react';
 
 export default function AdminLayout() {
   const { user, logout, token } = useAuthStore();
@@ -44,6 +44,7 @@ export default function AdminLayout() {
     { name: 'Économat & Stocks', path: '/admin/stocks', icon: PackageSearch },
     { name: 'Gestion POS', path: '/admin/pos', icon: Coffee },
     { name: 'Rapports & Analytics', path: '/admin/rapports', icon: TrendingUp },
+    { name: 'Preuves & Photos', path: '/admin/preuves', icon: Camera },
     { name: 'Paramètres', path: '/admin/parametres', icon: Settings },
   ];
 
