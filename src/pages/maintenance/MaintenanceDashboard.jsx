@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
-import { Camera, MapPin, AlertTriangle, CheckCircle, PackageSearch, PenTool } from 'lucide-react';
+import { Camera, MapPin, AlertTriangle, CheckCircle, PackageSearch, PenTool, Download } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
+import { generateBilan } from '../../lib/pdfBilan';
 
 export default function MaintenanceDashboard() {
   const { user, token } = useAuthStore();
@@ -9,6 +10,7 @@ export default function MaintenanceDashboard() {
   const [loading, setLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState(null);
   const [achats, setAchats] = useState([]);
+  const [downloading, setDownloading] = useState(false);
   
   // States for interaction
   const [achatsForm, setAchatsForm] = useState(false);
@@ -106,11 +108,29 @@ export default function MaintenanceDashboard() {
     } catch(e) { console.error(e); }
   };
 
+  const handleDownloadBilan = async () => {
+    setDownloading(true);
+    try {
+      const res = await fetch('/api/maintenance/report/bilan', { headers: { 'Authorization': `Bearer ${token}` }});
+      const data = await res.json();
+      generateBilan(user, data, () => setDownloading(false));
+    } catch(e) {
+      console.error(e);
+      setDownloading(false);
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-neutral-200">
-         <h2 className="text-xl font-bold text-neutral-800">Mes Interventions</h2>
-         <p className="text-neutral-500 text-sm">Signalements et tâches assignées en attente de réparation.</p>
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-neutral-200 flex justify-between items-center">
+         <div>
+           <h2 className="text-xl font-bold text-neutral-800">Mes Interventions</h2>
+           <p className="text-neutral-500 text-sm">Signalements et tâches assignées en attente de réparation.</p>
+         </div>
+         <Button onClick={handleDownloadBilan} disabled={downloading} variant="outline" className="text-indigo-600 border-indigo-200 hover:bg-indigo-50">
+           <Download className="w-4 h-4 mr-2" />
+           {downloading ? 'Téléchargement...' : 'Télécharger le bilan'}
+         </Button>
       </div>
 
       {loading && taches.length === 0 ? <p className="text-center p-8 text-neutral-500 font-medium">Chargement des données...</p> : null}

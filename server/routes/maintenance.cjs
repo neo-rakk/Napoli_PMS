@@ -117,4 +117,42 @@ router.get('/:id/achats', requireAuth, async (req, res) => {
   }
 });
 
+// Télécharger le Bilan (Data provider)
+router.get('/report/bilan', requireAuth, async (req, res) => {
+  try {
+    const interventions = await db.all(`
+      SELECT m.*, 
+             c.numero as chambre_numero, c.bloc as chambre_bloc
+      FROM maintenance m
+      LEFT JOIN chambres c ON m.chambre_id = c.id
+      WHERE m.assigne_a = $1 AND m.statut = 'resolu' AND COALESCE(m.archive_bilan, 0) = 0
+      ORDER BY m.date_resolution DESC
+    `, [req.agent.id]);
+
+    const ids = interventions.map(i => i.id);
+    let achats = [];
+    if (ids.length > 0) {
+      achats = await db.all(`
+        SELECT * FROM maintenance_pieces_demandees
+        WHERE maintenance_id = ANY($1::int[])
+        ORDER BY created_at ASC
+      `, [ids]);
+    }
+
+    res.json({ interventions, achats });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Admin: Remise a zero des bilans
+router.post('/admin/reset-bilans', requireAuth, requireRole('admin'), async (req, res) => {
+  try {
+    await db.query(`UPDATE maintenance SET archive_bilan = 1 WHERE statut = 'resolu' AND COALESCE(archive_bilan, 0) = 0`);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

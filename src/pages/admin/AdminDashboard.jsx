@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
+import { Button } from '../../components/ui/Button';
 
 export default function AdminDashboard() {
   const { token } = useAuthStore();
   const [stats, setStats] = useState(null);
+  const [resetting, setResetting] = useState(false);
 
   useEffect(() => {
     fetch('/api/stats/summary', { headers: { 'Authorization': `Bearer ${token}` } })
@@ -12,13 +14,37 @@ export default function AdminDashboard() {
       .catch(console.error);
   }, [token]);
 
+  const handleResetBilans = async () => {
+    if (!window.confirm("Êtes-vous sûr de vouloir remettre à zéro les bilans de maintenance ? Les interventions clôturées ne seront plus téléchargeables par les agents.")) return;
+    
+    setResetting(true);
+    try {
+      const res = await fetch('/api/maintenance/admin/reset-bilans', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if(res.ok) alert("Les bilans de maintenance ont été remis à zéro avec succès.");
+      else alert("Erreur lors de la remise à zéro.");
+    } catch(e) {
+      console.error(e);
+      alert("Erreur lors de la remise à zéro.");
+    } finally {
+      setResetting(false);
+    }
+  };
+
   if (!stats) return <div className="p-8">Chargement des statistiques...</div>;
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-800">Tableau de bord Admin</h1>
-        <p className="text-slate-500">Vue d'ensemble de l'activité du Village Olympique.</p>
+      <div className="mb-8 flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800">Tableau de bord Admin</h1>
+          <p className="text-slate-500">Vue d'ensemble de l'activité du Village Olympique.</p>
+        </div>
+        <Button variant="outline" className="border-red-200 text-red-600 hover:bg-red-50" onClick={handleResetBilans} disabled={resetting}>
+          {resetting ? 'Remise à zéro en cours...' : 'Remise à zéro des interventions'}
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
